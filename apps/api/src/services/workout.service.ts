@@ -85,7 +85,7 @@ export async function deleteWorkout(id: string, userId: string): Promise<boolean
     'DELETE FROM workouts WHERE id = $1 AND user_id = $2',
     [id, userId]
   );
-  return (result as unknown as { rowCount: number }).length > 0;
+  return (result as unknown as { rowCount: number }).rowCount > 0;
 }
 
 export async function addSet(

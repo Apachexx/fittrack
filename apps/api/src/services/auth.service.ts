@@ -31,7 +31,8 @@ function generateAccessToken(userId: string, email: string): { token: string; jt
   const token = jwt.sign(
     { sub: userId, email, jti },
     process.env.JWT_ACCESS_SECRET!,
-    { expiresIn: process.env.ACCESS_TOKEN_TTL || '15m' }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { expiresIn: (process.env.ACCESS_TOKEN_TTL || '15m') as any }
   );
   return { token, jti };
 }

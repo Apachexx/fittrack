@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes musclePulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+.muscle-pulse-primary { animation: musclePulse 1.5s ease-in-out infinite; }
+.muscle-pulse-secondary { animation: musclePulse 2s ease-in-out infinite; }
+
+@layer base {
+  body {
+    @apply bg-[#080C14] text-gray-100 font-sans antialiased;
+  }
+
+  ::selection { background: rgba(249,115,22,0.3); color: #fff; }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+}
+
+@layer components {
+  .card {
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(20px);
+    @apply rounded-2xl p-6;
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .btn-primary {
+    @apply bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500
+           text-white font-semibold px-4 py-2 rounded-xl transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97]
+           shadow-lg;
+    box-shadow: 0 4px 24px -4px rgba(249,115,22,0.3);
+  }
+  .btn-secondary {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    @apply text-gray-200 font-medium px-4 py-2 rounded-xl transition-all duration-150 active:scale-[0.97];
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.09); }
+  .btn-ghost {
+    @apply text-gray-500 hover:text-gray-100 font-medium px-4 py-2 rounded-xl transition-all duration-150;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.05); }
+  .input {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    @apply w-full rounded-xl px-4 py-2.5 text-sm text-gray-100
+           placeholder:text-gray-600 focus:outline-none transition-all duration-150;
+  }
+  .input:hover { background: rgba(255,255,255,0.06); }
+  .input:focus {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(249,115,22,0.5);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+  }
+  .label { @apply block text-sm font-medium text-gray-400 mb-1.5; }
+  .badge-beginner {
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.2);
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-emerald-400;
+  }
+  .badge-intermediate {
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.2);
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-amber-400;
+  }
+  .badge-advanced {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-red-400;
+  }
+}
+
+@layer utilities {
+  .glow-orange { box-shadow: 0 0 40px -8px rgba(249,115,22,0.4); }
+  .glass {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, #fb923c 0%, #f43f5e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+}

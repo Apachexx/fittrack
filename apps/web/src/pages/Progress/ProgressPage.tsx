@@ -170,7 +170,7 @@ export default function ProgressPage() {
     week: format(new Date(w.week_start ?? w.weekStart ?? ''), 'd MMM', { locale: tr }),
     antrenman: Number(w.total_workouts ?? w.totalWorkouts ?? 0),
     hacim: Math.round(Number(w.total_volume ?? w.totalVolume ?? 0) / 1000),
-  })).reverse();
+  }));
 
   const tooltipStyle = {
     contentStyle: { backgroundColor: '#0f1a24', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#f1f5f9' },

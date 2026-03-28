@@ -333,9 +333,6 @@ export default function WorkoutSessionPage() {
                     {selectedExLastSession.map((s) => `${s.reps ?? '?'}×${s.weight_kg ? parseFloat(s.weight_kg) : 0}kg`).join(' · ')}
                   </div>
                 )}
-                <button onClick={addSet} className="btn-primary w-full text-sm">
-                  + {selectedEx.name} — Set Ekle
-                </button>
               </div>
             )}
           </div>
@@ -412,16 +409,6 @@ export default function WorkoutSessionPage() {
                       );
                     })}
 
-                    {/* Add set chip */}
-                    {exSets.length < 15 && (
-                      <button
-                        onClick={() => addSetForExercise(exObj)}
-                        className="w-10 h-10 rounded-xl font-bold text-lg transition-all"
-                        style={{ background: 'rgba(255,255,255,0.03)', color: '#4b5563', border: '1px dashed rgba(255,255,255,0.1)' }}
-                      >
-                        +
-                      </button>
-                    )}
                   </div>
 
                   {/* Set editing panel */}

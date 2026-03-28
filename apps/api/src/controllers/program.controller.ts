@@ -44,3 +44,17 @@ export async function updateProgress(req: AuthRequest, res: Response): Promise<v
   }
   res.json(updated);
 }
+
+export async function createProgram(req: AuthRequest, res: Response): Promise<void> {
+  const program = await programService.createCustomProgram(req.user!.id, req.body);
+  if (!program) {
+    res.status(500).json({ error: 'Program oluşturulamadı' });
+    return;
+  }
+  res.status(201).json(program);
+}
+
+export async function getExerciseStrengthTrend(req: AuthRequest, res: Response): Promise<void> {
+  const data = await programService.getExerciseStrengthTrend(req.user!.id, req.params.exerciseId);
+  res.json(data);
+}

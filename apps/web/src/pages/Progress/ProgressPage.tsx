@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { progressApi } from '@/api/progress.api';
 import { workoutApi } from '@/api/workout.api';
+import { programApi } from '@/api/program.api';
 import { format, subDays, startOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
@@ -124,6 +125,11 @@ export default function ProgressPage() {
   const { data: workoutDates } = useQuery({
     queryKey: ['workout-dates'],
     queryFn: () => workoutApi.getWorkoutDates(),
+  });
+  const { data: strengthTrend } = useQuery({
+    queryKey: ['strength-trend', selectedExercise],
+    queryFn: () => programApi.getStrengthTrend(selectedExercise),
+    enabled: !!selectedExercise,
   });
 
   const addMeasurementMutation = useMutation({
@@ -438,6 +444,86 @@ export default function ProgressPage() {
               options={exercises?.map((ex) => ({ value: ex.id, label: ex.name })) ?? []}
             />
           </div>
+
+          {/* Strength trend analysis */}
+          {strengthTrend && strengthTrend.length >= 2 && (() => {
+            const sessions = [...strengthTrend].reverse();
+            const weights = sessions.map((s) => parseFloat(s.max_weight));
+            const latest = weights[weights.length - 1];
+            const prev = weights[weights.length - 2];
+            const diff = latest - prev;
+            const trend = diff > 0 ? 'up' : diff < 0 ? 'down' : 'stable';
+            const trendColor = trend === 'up' ? '#22c55e' : trend === 'down' ? '#ef4444' : '#f59e0b';
+            const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+            const trendLabel = trend === 'up' ? 'İlerliyorsun!' : trend === 'down' ? 'Gerileme var' : 'Sabit kalıyor';
+
+            // Check overall trend (last 4 vs first 4 sessions)
+            const half = Math.floor(weights.length / 2);
+            const earlyAvg = weights.slice(0, half).reduce((a, b) => a + b, 0) / half;
+            const lateAvg = weights.slice(-half).reduce((a, b) => a + b, 0) / half;
+            const overallPct = earlyAvg > 0 ? Math.round(((lateAvg - earlyAvg) / earlyAvg) * 100) : 0;
+
+            return (
+              <div className="card p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-white">Kuvvet Trendi</h3>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
+                    style={{ background: `${trendColor}15`, border: `1px solid ${trendColor}30` }}>
+                    <span className="text-lg font-bold" style={{ color: trendColor }}>{trendIcon}</span>
+                    <span className="text-sm font-medium" style={{ color: trendColor }}>{trendLabel}</span>
+                  </div>
+                </div>
+
+                {/* Weight timeline */}
+                <div className="flex items-end gap-1.5 h-20 mb-3">
+                  {sessions.map((s, i) => {
+                    const w = parseFloat(s.max_weight);
+                    const maxW = Math.max(...weights);
+                    const pct = maxW > 0 ? (w / maxW) * 100 : 50;
+                    const isLast = i === sessions.length - 1;
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
+                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-white whitespace-nowrap px-2 py-1 rounded-lg z-10"
+                          style={{ background: '#0f1a24', border: '1px solid rgba(255,255,255,0.1)' }}>
+                          {w} kg
+                        </div>
+                        <div
+                          className="w-full rounded-t-md transition-all"
+                          style={{
+                            height: `${pct}%`,
+                            background: isLast ? '#f97316' : 'rgba(249,115,22,0.3)',
+                            minHeight: '4px',
+                          }}
+                        />
+                        <span className="text-[9px] text-gray-700">
+                          {format(new Date(s.date), 'dd/MM', { locale: tr })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-800">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-0.5">Son seans</p>
+                    <p className="text-lg font-bold text-white">{latest} kg</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-0.5">Fark</p>
+                    <p className="text-lg font-bold" style={{ color: trendColor }}>
+                      {diff > 0 ? '+' : ''}{diff.toFixed(1)} kg
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-0.5">Genel değişim</p>
+                    <p className="text-lg font-bold" style={{ color: overallPct >= 0 ? '#22c55e' : '#ef4444' }}>
+                      {overallPct > 0 ? '+' : ''}{overallPct}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {prHistory && (prHistory as unknown[]).length > 0 ? (
             <div className="card">

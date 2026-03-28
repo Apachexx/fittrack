@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { programApi } from '@/api/program.api';
 import type { Program } from '@fittrack/shared';
 import Select from '@/components/ui/Select';
@@ -19,6 +19,7 @@ const GOAL_LABELS: Record<string, string> = {
 };
 
 export default function ProgramListPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [levelFilter, setLevelFilter] = useState('');
   const [goalFilter, setGoalFilter] = useState('');
@@ -53,9 +54,18 @@ export default function ProgramListPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white">Hazır Programlar</h1>
-        <p className="text-gray-400 mt-1">Uzman antrenörler tarafından hazırlanmış programlar</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Programlar</h1>
+          <p className="text-gray-400 mt-1">Hazır programlar veya kendin oluştur</p>
+        </div>
+        <button onClick={() => navigate('/programs/create')} className="btn-primary flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+            <line x1="12" y1="5" x2="12" y2="19" strokeLinecap="round" />
+            <line x1="5" y1="12" x2="19" y2="12" strokeLinecap="round" />
+          </svg>
+          Program Oluştur
+        </button>
       </div>
 
       {/* Aktif program banner */}

@@ -11,6 +11,7 @@ import NutritionDashboard from '@/pages/Nutrition/NutritionDashboard';
 import ProgressPage from '@/pages/Progress/ProgressPage';
 import ProgramListPage from '@/pages/Programs/ProgramListPage';
 import ProgramDetailPage from '@/pages/Programs/ProgramDetailPage';
+import ProgramCreatePage from '@/pages/Programs/ProgramCreatePage';
 import SettingsPage from '@/pages/Settings/SettingsPage';
 
 function ProtectedRoute() {
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
           { path: '/nutrition', element: <NutritionDashboard /> },
           { path: '/progress', element: <ProgressPage /> },
           { path: '/programs', element: <ProgramListPage /> },
+          { path: '/programs/create', element: <ProgramCreatePage /> },
           { path: '/programs/:id', element: <ProgramDetailPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],

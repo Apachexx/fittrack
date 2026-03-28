@@ -116,3 +116,72 @@ export async function updateEnrollmentProgress(userId: string, programId: string
     [userId, programId, currentWeek]
   );
 }
+
+export async function createCustomProgram(
+  userId: string,
+  data: {
+    title: string;
+    level: string;
+    goal: string;
+    durationWeeks: number;
+    days: Array<{
+      dayNumber: number;
+      name: string;
+      exercises: Array<{
+        exerciseId: string;
+        sets: number;
+        reps: string;
+        restSecs?: number;
+      }>;
+    }>;
+  }
+) {
+  const program = await queryOne<ProgramRow>(
+    `INSERT INTO programs (title, level, goal, duration_weeks, created_by)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [data.title, data.level, data.goal, data.durationWeeks, userId]
+  );
+  if (!program) return null;
+
+  const week = await queryOne<{ id: string }>(
+    `INSERT INTO program_weeks (program_id, week_number) VALUES ($1, 1) RETURNING *`,
+    [program.id]
+  );
+  if (!week) return null;
+
+  for (const dayData of data.days) {
+    const day = await queryOne<{ id: string }>(
+      `INSERT INTO program_days (week_id, day_number, name, is_rest_day)
+       VALUES ($1, $2, $3, FALSE) RETURNING *`,
+      [week.id, dayData.dayNumber, dayData.name]
+    );
+    if (!day) continue;
+
+    for (let i = 0; i < dayData.exercises.length; i++) {
+      const ex = dayData.exercises[i];
+      await query(
+        `INSERT INTO program_day_exercises (day_id, exercise_id, sets, reps, rest_secs, sort_order)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [day.id, ex.exerciseId, ex.sets, ex.reps, ex.restSecs ?? 90, i]
+      );
+    }
+  }
+
+  return program;
+}
+
+export async function getExerciseStrengthTrend(userId: string, exerciseId: string) {
+  return query(
+    `SELECT DATE(w.started_at) AS date,
+            MAX(ws.weight_kg::numeric) AS max_weight,
+            MAX(ws.reps) AS reps_at_max
+     FROM workout_sets ws
+     JOIN workouts w ON w.id = ws.workout_id
+     WHERE w.user_id = $1 AND ws.exercise_id = $2
+       AND ws.weight_kg IS NOT NULL AND ws.completed = TRUE
+     GROUP BY DATE(w.started_at)
+     ORDER BY date DESC
+     LIMIT 8`,
+    [userId, exerciseId]
+  );
+}

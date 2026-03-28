@@ -65,6 +65,23 @@ function toEnrollment(e: any): ProgramEnrollment {
   } as ProgramEnrollment & { title?: string };
 }
 
+export interface CustomProgramInput {
+  title: string;
+  level: string;
+  goal: string;
+  durationWeeks: number;
+  days: Array<{
+    dayNumber: number;
+    name: string;
+    exercises: Array<{
+      exerciseId: string;
+      sets: number;
+      reps: string;
+      restSecs?: number;
+    }>;
+  }>;
+}
+
 export const programApi = {
   list: (params?: { level?: string; goal?: string }) =>
     api.get<unknown[]>('/programs', { params }).then((r) => r.data.map(toProgram)),
@@ -76,4 +93,10 @@ export const programApi = {
     api.get<unknown | null>('/programs/active').then((r) => r.data ? toEnrollment(r.data) : null),
   updateProgress: (id: string, currentWeek: number) =>
     api.patch(`/programs/${id}/progress`, { currentWeek }).then((r) => r.data),
+  create: (data: CustomProgramInput) =>
+    api.post<unknown>('/programs', data).then((r) => toProgram(r.data)),
+  getStrengthTrend: (exerciseId: string) =>
+    api.get<Array<{ date: string; max_weight: string; reps_at_max: number }>>(
+      `/programs/strength-trend/${exerciseId}`
+    ).then((r) => r.data),
 };

@@ -12,6 +12,7 @@ import ProgressPage from '@/pages/Progress/ProgressPage';
 import ProgramListPage from '@/pages/Programs/ProgramListPage';
 import ProgramDetailPage from '@/pages/Programs/ProgramDetailPage';
 import ProgramCreatePage from '@/pages/Programs/ProgramCreatePage';
+import CommunityProgramsPage from '@/pages/Programs/CommunityProgramsPage';
 import SettingsPage from '@/pages/Settings/SettingsPage';
 
 function ProtectedRoute() {
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
           { path: '/progress', element: <ProgressPage /> },
           { path: '/programs', element: <ProgramListPage /> },
           { path: '/programs/create', element: <ProgramCreatePage /> },
+          { path: '/programs/community', element: <CommunityProgramsPage /> },
           { path: '/programs/:id', element: <ProgramDetailPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],

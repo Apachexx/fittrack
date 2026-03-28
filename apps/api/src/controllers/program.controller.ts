@@ -58,3 +58,18 @@ export async function getExerciseStrengthTrend(req: AuthRequest, res: Response):
   const data = await programService.getExerciseStrengthTrend(req.user!.id, req.params.exerciseId);
   res.json(data);
 }
+
+export async function getCommunityPrograms(_req: AuthRequest, res: Response): Promise<void> {
+  const programs = await programService.getCommunityPrograms();
+  res.json(programs);
+}
+
+export async function updateProgramVisibility(req: AuthRequest, res: Response): Promise<void> {
+  const { isPublic } = req.body;
+  const result = await programService.toggleProgramVisibility(req.params.id, req.user!.id, !!isPublic);
+  if (!result) {
+    res.status(403).json({ error: 'Yetki yok veya program bulunamadı' });
+    return;
+  }
+  res.json(result);
+}

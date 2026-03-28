@@ -99,4 +99,12 @@ export const programApi = {
     api.get<Array<{ date: string; max_weight: string; reps_at_max: number }>>(
       `/programs/strength-trend/${exerciseId}`
     ).then((r) => r.data),
+  getCommunity: () =>
+    api.get<Array<{
+      id: string; title: string; level: string; goal: string;
+      duration_weeks: number; creator_name: string | null; created_by: string | null;
+      day_count: string; exercise_count: string;
+    }>>('/programs/community').then((r) => r.data),
+  setVisibility: (id: string, isPublic: boolean) =>
+    api.patch<{ id: string; is_public: boolean }>(`/programs/${id}/visibility`, { isPublic }).then((r) => r.data),
 };

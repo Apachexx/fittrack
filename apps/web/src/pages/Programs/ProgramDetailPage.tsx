@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { programApi } from '@/api/program.api';
+import { useAuth } from '@/context/AuthContext';
 import BodyMap from '@/components/ui/BodyMap';
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -19,17 +20,24 @@ const GOAL_LABELS: Record<string, string> = {
 
 export default function ProgramDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<{
     key: string;
     exerciseName: string;
     muscleGroup: string | null;
   } | null>(null);
+  const [isPublic, setIsPublic] = useState<boolean | null>(null);
 
   const { data: program, isLoading } = useQuery({
     queryKey: ['program', id],
     queryFn: () => programApi.get(id!),
     enabled: !!id,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    select: (data: any) => {
+      if (isPublic === null) setIsPublic(data.is_public ?? false);
+      return data;
+    },
   });
 
   const { data: activeProgram } = useQuery({
@@ -39,12 +47,22 @@ export default function ProgramDetailPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isEnrolled = !!activeProgram && (activeProgram as any).programId === id;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isOwner = !!user && !!(program as any)?.createdBy && (program as any).createdBy === user.id;
 
   const enrollMutation = useMutation({
     mutationFn: () => programApi.enroll(id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-program'] });
       queryClient.invalidateQueries({ queryKey: ['programs'] });
+    },
+  });
+
+  const visibilityMutation = useMutation({
+    mutationFn: (val: boolean) => programApi.setVisibility(id!, val),
+    onSuccess: (data) => {
+      setIsPublic(data.is_public);
+      queryClient.invalidateQueries({ queryKey: ['community-programs'] });
     },
   });
 
@@ -94,6 +112,29 @@ export default function ProgramDetailPage() {
                 <span className="text-sm text-gray-500">👤 {program.creatorName}</span>
               )}
             </div>
+
+            {/* Visibility toggle — only owner sees this */}
+            {isOwner && (
+              <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-800">
+                <span className="text-sm text-gray-400">Herkese Açık</span>
+                <button
+                  onClick={() => visibilityMutation.mutate(!isPublic)}
+                  disabled={visibilityMutation.isPending}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${
+                    isPublic ? 'bg-primary-500' : 'bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      isPublic ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span className="text-xs text-gray-500">
+                  {isPublic ? 'Topluluk sayfasında görünüyor' : 'Sadece sen görüyorsun'}
+                </span>
+              </div>
+            )}
           </div>
 
           {isEnrolled ? (
@@ -162,9 +203,6 @@ export default function ProgramDetailPage() {
                                 <div className="flex items-center gap-2 shrink-0 ml-2">
                                   <span className="text-xs font-semibold text-orange-400">
                                     {ex.sets} × {ex.reps}
-                                  </span>
-                                  <span className="text-xs text-gray-600">
-                                    {ex.restSecs}s
                                   </span>
                                 </div>
                               </button>

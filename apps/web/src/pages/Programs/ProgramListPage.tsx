@@ -78,6 +78,28 @@ export default function ProgramListPage() {
         </div>
       </button>
 
+      {/* Topluluk programları */}
+      <button
+        onClick={() => navigate('/programs/community')}
+        className="w-full text-left rounded-2xl p-5 transition-all"
+        style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%)', border: '1px solid rgba(99,102,241,0.25)' }}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">Kullanıcı programları</p>
+            <p className="text-lg font-bold text-white">Topluluk</p>
+            <p className="text-sm text-gray-400 mt-1">Herkesin paylaştığı programları keşfet</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth={2} className="w-6 h-6">
+              <circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4" strokeLinecap="round" />
+              <circle cx="19" cy="11" r="3" /><path d="M16 21v-1a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1" strokeLinecap="round" />
+            </svg>
+          </div>
+        </div>
+      </button>
+
       {/* Aktif program */}
       {activeProgram && (
         <div className="rounded-2xl p-4 flex items-center justify-between"

@@ -170,6 +170,37 @@ export async function createCustomProgram(
   return program;
 }
 
+export async function getCommunityPrograms() {
+  return query<{
+    id: string; title: string; level: string; goal: string;
+    duration_weeks: number; creator_name: string | null; created_by: string | null;
+    day_count: string; exercise_count: string;
+  }>(
+    `SELECT p.id, p.title, p.level, p.goal, p.duration_weeks,
+            u.name AS creator_name, p.created_by,
+            COUNT(DISTINCT pd.id) AS day_count,
+            COUNT(DISTINCT pde.id) AS exercise_count
+     FROM programs p
+     LEFT JOIN users u ON u.id = p.created_by
+     LEFT JOIN program_weeks pw ON pw.program_id = p.id
+     LEFT JOIN program_days pd ON pd.week_id = pw.id AND pd.is_rest_day = FALSE
+     LEFT JOIN program_day_exercises pde ON pde.day_id = pd.id
+     WHERE p.is_public = TRUE
+     GROUP BY p.id, u.name, p.created_by
+     ORDER BY p.created_at DESC`,
+    []
+  );
+}
+
+export async function toggleProgramVisibility(programId: string, userId: string, isPublic: boolean) {
+  return queryOne<{ id: string; is_public: boolean }>(
+    `UPDATE programs SET is_public = $1
+     WHERE id = $2 AND created_by = $3
+     RETURNING id, is_public`,
+    [isPublic, programId, userId]
+  );
+}
+
 export async function getExerciseStrengthTrend(userId: string, exerciseId: string) {
   return query(
     `SELECT DATE(w.started_at) AS date,

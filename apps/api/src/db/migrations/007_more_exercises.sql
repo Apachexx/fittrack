@@ -1,0 +1,20 @@
+INSERT INTO exercises (id, name, muscle_group, equipment, is_custom) VALUES
+  (gen_random_uuid(), 'Plate Loaded Chest Press', 'chest', 'machine', false),
+  (gen_random_uuid(), 'Pec Deck', 'chest', 'machine', false),
+  (gen_random_uuid(), 'Dumbbell Bench Press', 'chest', 'dumbbell', false),
+  (gen_random_uuid(), 'Low Cable Fly', 'chest', 'cables', false),
+  (gen_random_uuid(), 'T-Bar Row', 'back', 'barbell', false),
+  (gen_random_uuid(), 'Chest Supported Row', 'back', 'machine', false),
+  (gen_random_uuid(), 'Hack Squat', 'legs', 'machine', false),
+  (gen_random_uuid(), 'Bulgarian Split Squat', 'legs', 'dumbbell', false),
+  (gen_random_uuid(), 'Hip Thrust', 'legs', 'barbell', false),
+  (gen_random_uuid(), 'Calf Raise', 'legs', 'machine', false),
+  (gen_random_uuid(), 'Arnold Press', 'shoulders', 'dumbbell', false),
+  (gen_random_uuid(), 'Upright Row', 'shoulders', 'barbell', false),
+  (gen_random_uuid(), 'Preacher Curl', 'arms', 'machine', false),
+  (gen_random_uuid(), 'Close Grip Bench Press', 'arms', 'barbell', false),
+  (gen_random_uuid(), 'Dips', 'arms', 'bodyweight', false),
+  (gen_random_uuid(), 'Hanging Leg Raise', 'core', 'bodyweight', false),
+  (gen_random_uuid(), 'Cable Crunch', 'core', 'cables', false),
+  (gen_random_uuid(), 'Ab Wheel', 'core', 'other', false)
+ON CONFLICT DO NOTHING;

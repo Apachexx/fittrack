@@ -84,15 +84,17 @@ export default function SettingsPage() {
 
   const isDirty = JSON.stringify(local) !== JSON.stringify(settings);
 
-  // Kalori hesabı — calcWeight ve calcHeight state'lerini kullanıyor
+  // Kalori hesabı — hedef kiloya göre hesaplanır
   const calcResult = (() => {
-    const w = calcWeight;
+    const current = calcWeight;
+    const target  = calcGoal !== 'maintain' && targetWeight > 0 ? targetWeight : calcWeight;
     const h = calcHeight;
-    if (!w || !h || !age) return null;
+    if (!current || !h || !age) return null;
 
+    // BMR hedef kiloya göre hesaplanır
     const bmr = gender === 'male'
-      ? 10 * w + 6.25 * h - 5 * age + 5
-      : 10 * w + 6.25 * h - 5 * age - 161;
+      ? 10 * target + 6.25 * h - 5 * age + 5
+      : 10 * target + 6.25 * h - 5 * age - 161;
 
     const tdee = Math.round(bmr * activityLevel);
     const goalDef = GOALS_CALC.find((g) => g.value === calcGoal)!;
@@ -102,8 +104,8 @@ export default function SettingsPage() {
     const carbs   = Math.round((dailyCalories * ratios.c) / 4);
     const fat     = Math.round((dailyCalories * ratios.f) / 9);
 
-    const tw = targetWeight > 0 ? targetWeight : w;
-    const diff = tw - w;
+    // Hedefe ulaşma süresi mevcut kilo farkına göre
+    const diff = target - current;
     let daysToGoal: number | null = null;
     if (calcGoal !== 'maintain' && Math.abs(diff) >= 0.5 && Math.abs(goalDef.delta) > 0) {
       daysToGoal = Math.round(Math.abs((diff * 7700) / goalDef.delta));

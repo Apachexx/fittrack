@@ -78,7 +78,7 @@ export default function SettingsPage() {
   const [age, setAge] = useState(25);
   const [activityLevel, setActivityLevel] = useState(1.55);
   const [calcGoal, setCalcGoal] = useState<'lose' | 'maintain' | 'gain'>('gain');
-  const [targetWeight, setTargetWeight] = useState(0);
+  const [targetWeight, setTargetWeight] = useState(settings.weightKg);
 
   const isDirty = JSON.stringify(local) !== JSON.stringify(settings);
 
@@ -100,7 +100,7 @@ export default function SettingsPage() {
     const carbs   = Math.round((dailyCalories * ratios.c) / 4);
     const fat     = Math.round((dailyCalories * ratios.f) / 9);
 
-    const tw = targetWeight || w;
+    const tw = targetWeight > 0 ? targetWeight : w;
     const diff = tw - w;
     let daysToGoal: number | null = null;
     if (calcGoal !== 'maintain' && Math.abs(diff) >= 0.5 && Math.abs(goalDef.delta) > 0) {
@@ -232,7 +232,7 @@ export default function SettingsPage() {
         {calcGoal !== 'maintain' && (
           <GoalInput
             label="Hedef Kilo"
-            value={targetWeight || local.weightKg}
+            value={targetWeight}
             onChange={setTargetWeight}
             unit="kg" min={30} max={300} step={0.5}
             hint={`Mevcut: ${local.weightKg} kg`}

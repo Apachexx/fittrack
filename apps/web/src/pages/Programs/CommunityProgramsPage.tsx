@@ -26,6 +26,8 @@ export default function CommunityProgramsPage() {
   const { data: programs, isLoading } = useQuery({
     queryKey: ['community-programs'],
     queryFn: programApi.getCommunity,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   return (

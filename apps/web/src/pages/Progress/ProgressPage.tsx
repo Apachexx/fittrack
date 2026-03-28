@@ -33,11 +33,10 @@ function HabitCalendar({ workoutDates }: { workoutDates: Array<{ date: string; c
   const dateSet = new Set(workoutDates.map((d) => d.date.split('T')[0]));
   const today = startOfDay(new Date());
   const WEEKS = 15;
-  const DAYS = 7;
 
-  // Build grid: last WEEKS weeks, starting from Monday
+  // Build flat array of last WEEKS*7 days
   const days: Array<{ date: Date; iso: string }> = [];
-  for (let i = (WEEKS * DAYS) - 1; i >= 0; i--) {
+  for (let i = WEEKS * 7 - 1; i >= 0; i--) {
     const d = subDays(today, i);
     days.push({ date: d, iso: format(d, 'yyyy-MM-dd') });
   }
@@ -45,39 +44,34 @@ function HabitCalendar({ workoutDates }: { workoutDates: Array<{ date: string; c
   const dayLabels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
   return (
-    <div>
-      <div className="flex gap-0.5 mb-1 ml-0">
+    <div className="flex gap-2">
+      {/* Day labels */}
+      <div className="flex flex-col gap-0.5 pt-0">
         {dayLabels.map((l) => (
-          <div key={l} className="flex-1 text-center text-[9px] text-gray-700">{l}</div>
+          <div key={l} className="text-[9px] text-gray-600 h-4 flex items-center">{l}</div>
         ))}
       </div>
-      <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${DAYS}, 1fr)` }}>
-        {days.map(({ date, iso }) => {
-          const hasWorkout = dateSet.has(iso);
-          const isToday = iso === format(today, 'yyyy-MM-dd');
-          return (
-            <div
-              key={iso}
-              title={`${format(date, 'd MMM', { locale: tr })}${hasWorkout ? ' — antrenman' : ''}`}
-              className="rounded-sm aspect-square"
-              style={{
-                background: hasWorkout
-                  ? 'rgba(249,115,22,0.7)'
-                  : 'rgba(255,255,255,0.04)',
-                border: isToday ? '1px solid rgba(249,115,22,0.5)' : '1px solid transparent',
-              }}
-            />
-          );
-        })}
-      </div>
-      <div className="flex items-center gap-2 mt-2 justify-end">
-        <span className="text-xs text-gray-700">Az</span>
-        <div className="flex gap-0.5">
-          {[0.06, 0.2, 0.4, 0.6, 0.85].map((o, i) => (
-            <div key={i} className="w-3 h-3 rounded-sm" style={{ background: `rgba(249,115,22,${o})` }} />
-          ))}
-        </div>
-        <span className="text-xs text-gray-700">Çok</span>
+      {/* Weeks grid — each column is one week */}
+      <div className="flex gap-0.5 flex-1 overflow-hidden">
+        {Array.from({ length: WEEKS }, (_, wi) => (
+          <div key={wi} className="flex flex-col gap-0.5 flex-1">
+            {days.slice(wi * 7, wi * 7 + 7).map(({ date, iso }) => {
+              const hasWorkout = dateSet.has(iso);
+              const isToday = iso === format(today, 'yyyy-MM-dd');
+              return (
+                <div
+                  key={iso}
+                  title={`${format(date, 'd MMM', { locale: tr })}${hasWorkout ? ' — antrenman' : ''}`}
+                  className="rounded-sm h-4"
+                  style={{
+                    background: hasWorkout ? 'rgba(249,115,22,0.7)' : 'rgba(255,255,255,0.04)',
+                    border: isToday ? '1px solid rgba(249,115,22,0.5)' : '1px solid transparent',
+                  }}
+                />
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );

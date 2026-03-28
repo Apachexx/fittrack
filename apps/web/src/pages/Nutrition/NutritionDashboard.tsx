@@ -117,14 +117,14 @@ export default function NutritionDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {macros.map((m) => {
           const val = Math.round((summary as Record<string, number> | undefined)?.[m.key] ?? 0);
-          const pct = Math.min((val / m.goal) * 100, 100);
-          const isOver = val > m.goal;
+          const pct = m.goal > 0 ? Math.min((val / m.goal) * 100, 100) : 0;
+          const isOver = m.goal > 0 && val > m.goal;
           return (
             <div key={m.key} className="card p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-gray-500">{m.label}</span>
                 <span className="text-xs font-semibold" style={{ color: isOver ? '#ef4444' : m.color }}>
-                  {isOver ? `+${val - m.goal}` : `${Math.round((1 - val/m.goal)*100)}% kaldı`}
+                  {isOver ? `+${val - m.goal}` : m.goal > 0 ? `${Math.round((1 - val/m.goal)*100)}% kaldı` : '—'}
                 </span>
               </div>
               <p className="text-xl font-bold text-white mb-2">{val.toLocaleString()}</p>

@@ -157,11 +157,11 @@ export async function getNutritionSummary(userId: string, date: string) {
     totalCarbs: 0,
     totalFat: 0,
     logs: rows.map((r) => {
-      const servings = parseFloat(r.servings);
-      const cal = parseFloat(r.calories) * servings;
-      const protein = parseFloat(r.protein_g) * servings;
-      const carbs = parseFloat(r.carbs_g) * servings;
-      const fat = parseFloat(r.fat_g) * servings;
+      const servings = parseFloat(r.servings) || 0;
+      const cal = (parseFloat(r.calories) || 0) * servings;
+      const protein = (parseFloat(r.protein_g) || 0) * servings;
+      const carbs = (parseFloat(r.carbs_g) || 0) * servings;
+      const fat = (parseFloat(r.fat_g) || 0) * servings;
       return {
         id: r.id,
         foodId: r.food_id,
@@ -200,6 +200,7 @@ export async function getDailyWater(userId: string, date: string) {
     'SELECT * FROM water_logs WHERE user_id = $1 AND logged_at = $2 ORDER BY created_at',
     [userId, date]
   );
-  const totalMl = (logs as Array<{ amount_ml: number }>).reduce((sum, l) => sum + l.amount_ml, 0);
+  const logArray = Array.isArray(logs) ? (logs as Array<{ amount_ml: number }>) : [];
+  const totalMl = logArray.reduce((sum, l) => sum + (Number(l.amount_ml) || 0), 0);
   return { date, totalMl, logs };
 }

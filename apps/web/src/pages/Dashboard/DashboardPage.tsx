@@ -12,7 +12,9 @@ import type { Workout } from '@fittrack/shared';
 
 function getStreak(workouts: Workout[]): number {
   if (!workouts?.length) return 0;
-  const days = new Set(workouts.map((w) => new Date(w.startedAt).toISOString().split('T')[0]));
+  const days = new Set(workouts
+    .filter((w) => w.startedAt && !isNaN(new Date(w.startedAt).getTime()))
+    .map((w) => new Date(w.startedAt).toISOString().split('T')[0]));
   const today = new Date().toISOString().split('T')[0];
   let streak = 0;
   let i = 0;
@@ -39,7 +41,7 @@ function getThisWeekWorkouts(workouts: Workout[]) {
 function CalorieRing({
   value, goal, size = 80,
 }: { value: number; goal: number; size?: number }) {
-  const pct = Math.min(value / goal, 1);
+  const pct = goal > 0 ? Math.min(value / goal, 1) : 0;
   const r = (size - 10) / 2;
   const circ = 2 * Math.PI * r;
   const dash = pct * circ;
@@ -60,9 +62,11 @@ function CalorieRing({
 }
 
 function WorkoutCard({ workout }: { workout: Workout }) {
-  const dur = workout.endedAt
-    ? differenceInMinutes(new Date(workout.endedAt), new Date(workout.startedAt))
-    : null;
+  const startDate = workout.startedAt ? new Date(workout.startedAt) : null;
+  const endDate = workout.endedAt ? new Date(workout.endedAt) : null;
+  const validStart = startDate && !isNaN(startDate.getTime());
+  const validEnd = endDate && !isNaN(endDate.getTime());
+  const dur = validStart && validEnd ? differenceInMinutes(endDate!, startDate!) : null;
   return (
     <Link to={`/workouts/${workout.id}`}
       className="card p-4 flex items-center gap-4 hover:border-white/[0.12] transition-all duration-150 group">
@@ -73,7 +77,7 @@ function WorkoutCard({ workout }: { workout: Workout }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-200 truncate">{workout.name}</p>
         <p className="text-xs text-gray-600">
-          {format(new Date(workout.startedAt), 'd MMM · HH:mm', { locale: tr })}
+          {validStart ? format(startDate!, 'd MMM · HH:mm', { locale: tr }) : '—'}
           {dur != null && dur > 0 && <span> · {dur}dk</span>}
         </p>
       </div>
@@ -182,7 +186,7 @@ export default function DashboardPage() {
           <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
             <div className="h-full rounded-full transition-all duration-700"
               style={{
-                width: `${Math.min((thisWeekWorkouts.length / weeklyGoal) * 100, 100)}%`,
+                width: `${weeklyGoal > 0 ? Math.min((thisWeekWorkouts.length / weeklyGoal) * 100, 100) : 0}%`,
                 background: thisWeekWorkouts.length >= weeklyGoal
                   ? 'linear-gradient(90deg, #22c55e, #16a34a)'
                   : 'linear-gradient(90deg, #f97316, #ea580c)',
@@ -316,7 +320,7 @@ export default function DashboardPage() {
               <div className="relative shrink-0">
                 <CalorieRing value={calories} goal={calorieGoal} size={76} />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">{Math.round((calories / calorieGoal) * 100)}%</span>
+                  <span className="text-xs font-bold text-white">{calorieGoal > 0 ? Math.round((calories / calorieGoal) * 100) : 0}%</span>
                 </div>
               </div>
               <div className="flex-1">
@@ -349,7 +353,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                       <div className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${Math.min((m.val / m.goal) * 100, 100)}%`, background: m.color }} />
+                        style={{ width: `${m.goal > 0 ? Math.min((m.val / m.goal) * 100, 100) : 0}%`, background: m.color }} />
                     </div>
                   </div>
                 ))}

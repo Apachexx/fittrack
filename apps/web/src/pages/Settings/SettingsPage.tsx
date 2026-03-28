@@ -117,7 +117,7 @@ export default function SettingsPage() {
       : 10 * target + 6.25 * calcHeight - 5 * age - 161;
 
     const tdee = Math.round(bmr * activityLevel);
-    const goalDef = GOALS_CALC.find((g) => g.value === calcGoal)!;
+    const goalDef = GOALS_CALC.find((g) => g.value === calcGoal) ?? GOALS_CALC[0];
     const rawCalories = Math.round(tdee * goalDef.multiplier);
     const minCal = gender === 'male' ? 1500 : 1200;
     const dailyCalories = Math.max(rawCalories, minCal);

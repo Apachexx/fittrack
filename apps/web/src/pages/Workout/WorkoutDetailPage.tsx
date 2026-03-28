@@ -54,7 +54,8 @@ export default function WorkoutDetailPage() {
       exerciseMap.set(name, { name, sets: [] });
       exerciseOrder.push(name);
     }
-    exerciseMap.get(name)!.sets!.push(set);
+    const entry = exerciseMap.get(name);
+    if (entry && entry.sets) entry.sets.push(set);
   }
 
   const totalVolume = (workout.sets ?? []).reduce((sum, s) => {
@@ -140,7 +141,9 @@ export default function WorkoutDetailPage() {
       {/* Egzersizler - sıra korunur */}
       <div className="space-y-4">
         {exerciseOrder.map((exName) => {
-          const { sets } = exerciseMap.get(exName)!;
+          const entry = exerciseMap.get(exName);
+          if (!entry) return null;
+          const { sets } = entry;
           return (
             <div key={exName} className="card">
               <p className="font-semibold text-white mb-4">{exName}</p>

@@ -8,7 +8,10 @@ import type { Workout } from '@fittrack/shared';
 
 function getDuration(workout: Workout): string | null {
   if (!workout.endedAt || !workout.startedAt) return null;
-  const mins = differenceInMinutes(new Date(workout.endedAt), new Date(workout.startedAt));
+  const start = new Date(workout.startedAt);
+  const end = new Date(workout.endedAt);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+  const mins = differenceInMinutes(end, start);
   if (mins < 1) return null;
   if (mins < 60) return `${mins}dk`;
   return `${Math.floor(mins / 60)}s ${mins % 60}dk`;
@@ -17,7 +20,9 @@ function getDuration(workout: Workout): string | null {
 function groupByMonth(workouts: Workout[]): Record<string, Workout[]> {
   const groups: Record<string, Workout[]> = {};
   for (const w of workouts) {
-    const key = format(new Date(w.startedAt), 'MMMM yyyy', { locale: tr });
+    const d = new Date(w.startedAt);
+    if (isNaN(d.getTime())) continue;
+    const key = format(d, 'MMMM yyyy', { locale: tr });
     if (!groups[key]) groups[key] = [];
     groups[key].push(w);
   }
@@ -124,7 +129,9 @@ export default function WorkoutListPage() {
                         <p className="text-sm font-semibold text-gray-200 truncate">{workout.name}</p>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <span className="text-xs text-gray-600">
-                            {format(new Date(workout.startedAt), 'd MMM yyyy · HH:mm', { locale: tr })}
+                            {workout.startedAt && !isNaN(new Date(workout.startedAt).getTime())
+                              ? format(new Date(workout.startedAt), 'd MMM yyyy · HH:mm', { locale: tr })
+                              : '—'}
                           </span>
                           {dur && <span className="text-xs text-gray-500">· {dur}</span>}
                           {workout.endedAt && (
@@ -170,13 +177,15 @@ export default function WorkoutListPage() {
                           className="card flex items-center gap-3 p-4 hover:border-white/[0.12] transition-all group">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-gray-400 shrink-0"
                             style={{ background: 'rgba(255,255,255,0.04)' }}>
-                            {format(new Date(workout.startedAt), 'd')}
+                            {workout.startedAt && !isNaN(new Date(workout.startedAt).getTime())
+                              ? format(new Date(workout.startedAt), 'd') : '—'}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-200 truncate">{workout.name}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-xs text-gray-600 capitalize">
-                                {format(new Date(workout.startedAt), 'EEEE · HH:mm', { locale: tr })}
+                                {workout.startedAt && !isNaN(new Date(workout.startedAt).getTime())
+                                  ? format(new Date(workout.startedAt), 'EEEE · HH:mm', { locale: tr }) : '—'}
                               </span>
                               {dur && <span className="text-xs text-gray-500">· {dur}</span>}
                             </div>

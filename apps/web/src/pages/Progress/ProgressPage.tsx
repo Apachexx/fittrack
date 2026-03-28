@@ -30,7 +30,7 @@ function epley1RM(weight: number, reps: number): number {
 const ONE_RM_PERCENTAGES = [100, 95, 90, 85, 80, 75, 70, 65, 60];
 
 function HabitCalendar({ workoutDates }: { workoutDates: Array<{ date: string; count: string }> }) {
-  const dateSet = new Set(workoutDates.map((d) => d.date.split('T')[0]));
+  const dateSet = new Set(workoutDates.filter((d) => d.date).map((d) => d.date.split('T')[0]));
   const today = startOfDay(new Date());
   const WEEKS = 15;
 
@@ -153,12 +153,16 @@ export default function ProgressPage() {
 
   const weightData = measurements
     ?.filter((m) => m.weightKg)
-    .map((m) => ({ date: format(new Date(m.measuredAt), 'd MMM', { locale: tr }), weight: m.weightKg! }))
+    .reduce<Array<{ date: string; weight: number }>>((acc, m) => {
+      const d = new Date(m.measuredAt);
+      if (!isNaN(d.getTime()) && m.weightKg) acc.push({ date: format(d, 'd MMM', { locale: tr }), weight: m.weightKg });
+      return acc;
+    }, [])
     .reverse();
 
   const pieData = (muscleData as Array<{ muscle_group: string; set_count: string }> | undefined)?.map((d) => ({
     name: MUSCLE_LABELS[d.muscle_group] ?? d.muscle_group,
-    value: parseInt(d.set_count),
+    value: parseInt(d.set_count ?? '0') || 0,
     color: MUSCLE_COLORS[d.muscle_group] ?? '#6b7280',
   }));
 
@@ -195,7 +199,7 @@ export default function ProgressPage() {
   // Workout streak
   const workoutStreak = (() => {
     if (!workoutDates || workoutDates.length === 0) return 0;
-    const dateSet = new Set(workoutDates.map((d) => d.date.split('T')[0]));
+    const dateSet = new Set(workoutDates.filter((d) => d.date).map((d) => d.date.split('T')[0]));
     let streak = 0;
     let cursor = new Date();
     while (true) {
@@ -483,7 +487,7 @@ export default function ProgressPage() {
                     {measurements.slice(0, 6).map((m, i) => (
                       <tr key={i} className="border-t border-gray-800/40">
                         <td className="py-2 pr-3 text-xs text-gray-400">
-                          {format(new Date(m.measuredAt), 'd MMM', { locale: tr })}
+                          {m.measuredAt && !isNaN(new Date(m.measuredAt).getTime()) ? format(new Date(m.measuredAt), 'd MMM', { locale: tr }) : '—'}
                         </td>
                         <td className="py-2 pr-3 text-xs font-semibold text-white">{m.weightKg ? `${m.weightKg}kg` : '—'}</td>
                         <td className="py-2 pr-3 text-xs text-gray-400">{m.bodyFat ? `${m.bodyFat}%` : '—'}</td>
@@ -515,7 +519,8 @@ export default function ProgressPage() {
 
           {/* Strength trend analysis */}
           {strengthTrend && strengthTrend.length >= 2 && (() => {
-            const sessions = [...strengthTrend].reverse();
+            const sessions = [...strengthTrend].reverse().filter((s) => !isNaN(parseFloat(s.max_weight)));
+            if (sessions.length < 2) return null;
             const weights = sessions.map((s) => parseFloat(s.max_weight));
             const latest = weights[weights.length - 1];
             const prev = weights[weights.length - 2];
@@ -564,7 +569,7 @@ export default function ProgressPage() {
                           }}
                         />
                         <span className="text-[9px] text-gray-700">
-                          {format(new Date(s.date), 'dd/MM', { locale: tr })}
+                          {s.date && !isNaN(new Date(s.date).getTime()) ? format(new Date(s.date), 'dd/MM', { locale: tr }) : '—'}
                         </span>
                       </div>
                     );

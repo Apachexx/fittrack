@@ -60,4 +60,10 @@ export const workoutApi = {
     api.post<unknown>('/workouts/exercises', data).then((r) => toExercise(r.data)),
   getPersonalRecords: () =>
     api.get('/workouts/personal-records').then((r) => r.data),
+  getExerciseLastSession: (exerciseId: string) =>
+    api.get<Array<{ set_number: number; reps: number | null; weight_kg: string | null }>>(
+      `/workouts/exercises/${exerciseId}/last-session`
+    ).then((r) => r.data),
+  getWorkoutDates: () =>
+    api.get<Array<{ date: string; count: string }>>('/workouts/dates').then((r) => r.data),
 };

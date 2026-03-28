@@ -12,6 +12,8 @@ import {
   listExercises,
   createExercise,
   getPersonalRecords,
+  getExerciseLastSession,
+  getWorkoutDates,
 } from '../controllers/workout.controller';
 
 const router = Router();
@@ -24,6 +26,8 @@ router.post('/', validate(createWorkoutSchema), createWorkout);
 router.get('/exercises', listExercises);
 router.post('/exercises', validate(createExerciseSchema), createExercise);
 router.get('/personal-records', getPersonalRecords);
+router.get('/dates', getWorkoutDates);
+router.get('/exercises/:exerciseId/last-session', getExerciseLastSession);
 router.get('/:id', getWorkout);
 router.put('/:id', updateWorkout);
 router.delete('/:id', deleteWorkout);

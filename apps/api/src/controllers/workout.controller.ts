@@ -1,6 +1,6 @@
-import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import * as workoutService from '../services/workout.service';
+import { Response } from 'express';
 
 export async function listWorkouts(req: AuthRequest, res: Response): Promise<void> {
   const workouts = await workoutService.listWorkouts(req.user!.id);
@@ -63,4 +63,14 @@ export async function createExercise(req: AuthRequest, res: Response): Promise<v
 export async function getPersonalRecords(req: AuthRequest, res: Response): Promise<void> {
   const records = await workoutService.getPersonalRecords(req.user!.id);
   res.json(records);
+}
+
+export async function getExerciseLastSession(req: AuthRequest, res: Response): Promise<void> {
+  const sets = await workoutService.getExerciseLastSession(req.user!.id, req.params.exerciseId);
+  res.json(sets);
+}
+
+export async function getWorkoutDates(req: AuthRequest, res: Response): Promise<void> {
+  const dates = await workoutService.getWorkoutDates(req.user!.id);
+  res.json(dates);
 }

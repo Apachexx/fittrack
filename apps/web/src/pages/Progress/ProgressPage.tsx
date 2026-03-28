@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import { progressApi } from '@/api/progress.api';
 import { workoutApi } from '@/api/workout.api';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
 const MUSCLE_COLORS: Record<string, string> = {
@@ -20,10 +20,72 @@ const MUSCLE_LABELS: Record<string, string> = {
   shoulders: 'Omuz', arms: 'Kol', core: 'Core', cardio: 'Kardiyo',
 };
 
+// Epley 1RM formula
+function epley1RM(weight: number, reps: number): number {
+  if (reps === 1) return weight;
+  return weight * (1 + reps / 30);
+}
+
+const ONE_RM_PERCENTAGES = [100, 95, 90, 85, 80, 75, 70, 65, 60];
+
+function HabitCalendar({ workoutDates }: { workoutDates: Array<{ date: string; count: string }> }) {
+  const dateSet = new Set(workoutDates.map((d) => d.date.split('T')[0]));
+  const today = startOfDay(new Date());
+  const WEEKS = 15;
+  const DAYS = 7;
+
+  // Build grid: last WEEKS weeks, starting from Monday
+  const days: Array<{ date: Date; iso: string }> = [];
+  for (let i = (WEEKS * DAYS) - 1; i >= 0; i--) {
+    const d = subDays(today, i);
+    days.push({ date: d, iso: format(d, 'yyyy-MM-dd') });
+  }
+
+  const dayLabels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+
+  return (
+    <div>
+      <div className="flex gap-0.5 mb-1 ml-0">
+        {dayLabels.map((l) => (
+          <div key={l} className="flex-1 text-center text-[9px] text-gray-700">{l}</div>
+        ))}
+      </div>
+      <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${DAYS}, 1fr)` }}>
+        {days.map(({ date, iso }) => {
+          const hasWorkout = dateSet.has(iso);
+          const isToday = iso === format(today, 'yyyy-MM-dd');
+          return (
+            <div
+              key={iso}
+              title={`${format(date, 'd MMM', { locale: tr })}${hasWorkout ? ' — antrenman' : ''}`}
+              className="rounded-sm aspect-square"
+              style={{
+                background: hasWorkout
+                  ? 'rgba(249,115,22,0.7)'
+                  : 'rgba(255,255,255,0.04)',
+                border: isToday ? '1px solid rgba(249,115,22,0.5)' : '1px solid transparent',
+              }}
+            />
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-2 mt-2 justify-end">
+        <span className="text-xs text-gray-700">Az</span>
+        <div className="flex gap-0.5">
+          {[0.06, 0.2, 0.4, 0.6, 0.85].map((o, i) => (
+            <div key={i} className="w-3 h-3 rounded-sm" style={{ background: `rgba(249,115,22,${o})` }} />
+          ))}
+        </div>
+        <span className="text-xs text-gray-700">Çok</span>
+      </div>
+    </div>
+  );
+}
+
 export default function ProgressPage() {
   const queryClient = useQueryClient();
   const { settings, save: saveSettings } = useSettings();
-  const [activeTab, setActiveTab] = useState<'body' | 'strength' | 'muscle'>('body');
+  const [activeTab, setActiveTab] = useState<'body' | 'strength' | 'muscle' | 'onerm'>('body');
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState({
     measuredAt: new Date().toISOString().split('T')[0],
@@ -35,6 +97,8 @@ export default function ProgressPage() {
   });
   const [selectedExercise, setSelectedExercise] = useState('');
   const [heightInput, setHeightInput] = useState(settings.heightCm > 0 ? String(settings.heightCm) : '');
+  const [onermWeight, setOnermWeight] = useState('');
+  const [onermReps, setOnermReps] = useState('');
 
   const { data: measurements } = useQuery({
     queryKey: ['measurements'],
@@ -56,6 +120,10 @@ export default function ProgressPage() {
   const { data: weeklySummary } = useQuery({
     queryKey: ['weekly-summary'],
     queryFn: () => progressApi.getWeeklySummary(),
+  });
+  const { data: workoutDates } = useQuery({
+    queryKey: ['workout-dates'],
+    queryFn: () => workoutApi.getWorkoutDates(),
   });
 
   const addMeasurementMutation = useMutation({
@@ -109,6 +177,37 @@ export default function ProgressPage() {
     labelStyle: { color: '#94a3b8' },
   };
 
+  // 1RM calculation
+  const oneRMResult = (() => {
+    const w = parseFloat(onermWeight);
+    const r = parseInt(onermReps);
+    if (!w || !r || r < 1) return null;
+    return epley1RM(w, r);
+  })();
+
+  // Workout streak
+  const workoutStreak = (() => {
+    if (!workoutDates || workoutDates.length === 0) return 0;
+    const dateSet = new Set(workoutDates.map((d) => d.date.split('T')[0]));
+    let streak = 0;
+    let cursor = new Date();
+    while (true) {
+      const iso = format(cursor, 'yyyy-MM-dd');
+      if (dateSet.has(iso)) {
+        streak++;
+        cursor = subDays(cursor, 1);
+      } else {
+        // allow today to be missed (still early in day)
+        if (streak === 0 && iso === format(new Date(), 'yyyy-MM-dd')) {
+          cursor = subDays(cursor, 1);
+          continue;
+        }
+        break;
+      }
+    }
+    return streak;
+  })();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -116,51 +215,56 @@ export default function ProgressPage() {
         <button onClick={() => setShowAddForm(true)} className="btn-primary">+ Ölçüm Ekle</button>
       </div>
 
-      {/* BMI + weight summary cards */}
-      {(latestWeight || bmi) && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {latestWeight && (
-            <div className="card p-4">
-              <p className="text-xs text-gray-500 mb-1">Son Kilo</p>
-              <p className="text-xl font-bold text-white">{latestWeight} kg</p>
-              {weightChange && (
-                <p className="text-xs mt-1 font-medium"
-                  style={{ color: parseFloat(weightChange) > 0 ? '#ef4444' : '#22c55e' }}>
-                  {parseFloat(weightChange) > 0 ? '+' : ''}{weightChange} kg
-                </p>
-              )}
-            </div>
-          )}
-          {bmi && bmiInfo && (
-            <div className="card p-4">
-              <p className="text-xs text-gray-500 mb-1">BMI</p>
-              <p className="text-xl font-bold" style={{ color: bmiInfo.color }}>{bmi}</p>
-              <p className="text-xs mt-1" style={{ color: bmiInfo.color }}>{bmiInfo.label}</p>
-            </div>
-          )}
-          {measurements?.[0]?.bodyFat && (
-            <div className="card p-4">
-              <p className="text-xs text-gray-500 mb-1">Yağ Oranı</p>
-              <p className="text-xl font-bold text-white">{measurements[0].bodyFat}%</p>
-            </div>
-          )}
-          {!settings.heightCm && (
-            <div className="card p-4 col-span-2 flex items-center gap-3"
-              style={{ border: '1px dashed rgba(249,115,22,0.2)' }}>
-              <div className="flex-1">
-                <p className="text-xs text-gray-400 mb-1">Boy girerek BMI hesapla</p>
-                <div className="flex gap-2">
-                  <input type="number" className="input py-1.5 text-sm" placeholder="175"
-                    value={heightInput} onChange={(e) => setHeightInput(e.target.value)} />
-                  <button
-                    onClick={() => { if (heightInput) saveSettings({ heightCm: parseFloat(heightInput) }); }}
-                    className="btn-primary py-1.5 px-3 text-xs shrink-0">Kaydet</button>
-                </div>
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {latestWeight && (
+          <div className="card p-4">
+            <p className="text-xs text-gray-500 mb-1">Son Kilo</p>
+            <p className="text-xl font-bold text-white">{latestWeight} kg</p>
+            {weightChange && (
+              <p className="text-xs mt-1 font-medium"
+                style={{ color: parseFloat(weightChange) > 0 ? '#ef4444' : '#22c55e' }}>
+                {parseFloat(weightChange) > 0 ? '+' : ''}{weightChange} kg
+              </p>
+            )}
+          </div>
+        )}
+        {bmi && bmiInfo && (
+          <div className="card p-4">
+            <p className="text-xs text-gray-500 mb-1">BMI</p>
+            <p className="text-xl font-bold" style={{ color: bmiInfo.color }}>{bmi}</p>
+            <p className="text-xs mt-1" style={{ color: bmiInfo.color }}>{bmiInfo.label}</p>
+          </div>
+        )}
+        {measurements?.[0]?.bodyFat && (
+          <div className="card p-4">
+            <p className="text-xs text-gray-500 mb-1">Yağ Oranı</p>
+            <p className="text-xl font-bold text-white">{measurements[0].bodyFat}%</p>
+          </div>
+        )}
+        {workoutStreak > 0 && (
+          <div className="card p-4">
+            <p className="text-xs text-gray-500 mb-1">Seri</p>
+            <p className="text-xl font-bold text-orange-400">{workoutStreak} 🔥</p>
+            <p className="text-xs text-gray-600 mt-1">gün üst üste</p>
+          </div>
+        )}
+        {!settings.heightCm && (
+          <div className="card p-4 col-span-2 flex items-center gap-3"
+            style={{ border: '1px dashed rgba(249,115,22,0.2)' }}>
+            <div className="flex-1">
+              <p className="text-xs text-gray-400 mb-1">Boy girerek BMI hesapla</p>
+              <div className="flex gap-2">
+                <input type="number" className="input py-1.5 text-sm" placeholder="175"
+                  value={heightInput} onChange={(e) => setHeightInput(e.target.value)} />
+                <button
+                  onClick={() => { if (heightInput) saveSettings({ heightCm: parseFloat(heightInput) }); }}
+                  className="btn-primary py-1.5 px-3 text-xs shrink-0">Kaydet</button>
               </div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Add form */}
       {showAddForm && (
@@ -219,15 +323,16 @@ export default function ProgressPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl w-fit"
+      <div className="flex gap-1 p-1 rounded-xl w-fit overflow-x-auto"
         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
         {[
           { key: 'body', label: '⚖️ Vücut' },
           { key: 'strength', label: '💪 Kuvvet' },
           { key: 'muscle', label: '🎯 Kas Grubu' },
+          { key: 'onerm', label: '🏆 1RM' },
         ].map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key as typeof activeTab)}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
             style={activeTab === tab.key
               ? { background: 'rgba(249,115,22,0.15)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.25)' }
               : { color: '#6b7280' }}>
@@ -239,6 +344,17 @@ export default function ProgressPage() {
       {/* Body Tab */}
       {activeTab === 'body' && (
         <div className="space-y-4">
+          {/* Habit Calendar */}
+          {workoutDates && workoutDates.length > 0 && (
+            <div className="card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-white">Antrenman Takvimi</h3>
+                <span className="text-xs text-gray-500">{workoutDates.length} antrenman</span>
+              </div>
+              <HabitCalendar workoutDates={workoutDates} />
+            </div>
+          )}
+
           {weeklyData && weeklyData.length > 0 && (
             <div className="card">
               <h3 className="font-semibold text-white mb-4">Haftalık Antrenman Sayısı</h3>
@@ -400,6 +516,80 @@ export default function ProgressPage() {
               Henüz antrenman verisi yok
             </div>
           )}
+        </div>
+      )}
+
+      {/* 1RM Calculator Tab */}
+      {activeTab === 'onerm' && (
+        <div className="space-y-4">
+          <div className="card p-5 space-y-4">
+            <div>
+              <h3 className="font-semibold text-white mb-1">1RM Hesaplayıcı</h3>
+              <p className="text-xs text-gray-600">Epley formülü: 1RM = Ağırlık × (1 + Tekrar / 30)</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">Ağırlık (kg)</label>
+                <input
+                  type="number"
+                  className="input"
+                  placeholder="100"
+                  value={onermWeight}
+                  onChange={(e) => setOnermWeight(e.target.value)}
+                  step="0.5"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="label">Tekrar Sayısı</label>
+                <input
+                  type="number"
+                  className="input"
+                  placeholder="8"
+                  value={onermReps}
+                  onChange={(e) => setOnermReps(e.target.value)}
+                  min="1"
+                  max="30"
+                />
+              </div>
+            </div>
+
+            {oneRMResult && (
+              <div className="pt-4 border-t border-gray-800">
+                <div className="text-center mb-6">
+                  <p className="text-xs text-gray-500 mb-1">Tahmini 1RM</p>
+                  <p className="text-5xl font-bold text-orange-400">{Math.round(oneRMResult)}</p>
+                  <p className="text-gray-500 mt-1">kg</p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">% Tablosu</p>
+                  {ONE_RM_PERCENTAGES.map((pct) => {
+                    const kg = (oneRMResult * pct) / 100;
+                    const estReps = pct === 100 ? 1
+                      : pct >= 95 ? 2
+                      : pct >= 90 ? 4
+                      : pct >= 85 ? 5
+                      : pct >= 80 ? 6
+                      : pct >= 75 ? 8
+                      : pct >= 70 ? 10
+                      : pct >= 65 ? 12
+                      : 15;
+                    return (
+                      <div key={pct} className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500 w-8 text-right">{pct}%</span>
+                        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'rgba(249,115,22,0.6)' }} />
+                        </div>
+                        <span className="text-sm font-semibold text-white w-16 text-right">{Math.round(kg)} kg</span>
+                        <span className="text-xs text-gray-600 w-12">~{estReps} tek</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

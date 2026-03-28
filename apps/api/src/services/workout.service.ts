@@ -167,3 +167,27 @@ export async function getPersonalRecords(userId: string) {
     [userId]
   );
 }
+
+export async function getExerciseLastSession(userId: string, exerciseId: string) {
+  return query(
+    `SELECT ws.set_number, ws.reps, ws.weight_kg
+     FROM workout_sets ws
+     JOIN workouts w ON w.id = ws.workout_id
+     WHERE w.user_id = $1 AND ws.exercise_id = $2 AND w.ended_at IS NOT NULL
+     ORDER BY w.started_at DESC, ws.set_number ASC
+     LIMIT 10`,
+    [userId, exerciseId]
+  );
+}
+
+export async function getWorkoutDates(userId: string) {
+  return query(
+    `SELECT DATE(started_at) AS date, COUNT(*) AS count
+     FROM workouts
+     WHERE user_id = $1 AND ended_at IS NOT NULL
+     GROUP BY DATE(started_at)
+     ORDER BY date DESC
+     LIMIT 365`,
+    [userId]
+  );
+}

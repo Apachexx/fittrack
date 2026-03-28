@@ -2,7 +2,7 @@ import { useState, useReducer, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workoutApi } from '@/api/workout.api';
-import RestTimer from '@/components/workout/RestTimer';
+import RestTimer, { type RestTimerRef } from '@/components/workout/RestTimer';
 import ExerciseModal from '@/components/workout/ExerciseModal';
 import type { Exercise } from '@fittrack/shared';
 
@@ -58,6 +58,7 @@ function clearSession() {
 export default function WorkoutSessionPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const restTimerRef = useRef<RestTimerRef>(null);
 
   const saved = loadSession();
   const [name, setName] = useState(saved?.name ?? 'Yeni Antrenman');
@@ -70,6 +71,8 @@ export default function WorkoutSessionPage() {
   const [elapsed, setElapsed] = useState(0);
   const [modalEx, setModalEx] = useState<Exercise | null>(null);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  // exerciseId → last session sets
+  const [lastSessionMap, setLastSessionMap] = useState<Record<string, Array<{ set_number: number; reps: number | null; weight_kg: string | null }>>>({});
   const startRef = useRef(saved?.startedAt ?? Date.now());
 
   useEffect(() => {
@@ -96,6 +99,13 @@ export default function WorkoutSessionPage() {
     queryFn: () => workoutApi.listExercises({ search: search || undefined, muscleGroup: muscleFilter || undefined }),
   });
 
+  // Fetch last session for selected exercise
+  const { data: selectedExLastSession } = useQuery({
+    queryKey: ['exercise-last-session', selectedEx?.id],
+    queryFn: () => workoutApi.getExerciseLastSession(selectedEx!.id),
+    enabled: !!selectedEx,
+  });
+
   const createMutation = useMutation({ mutationFn: workoutApi.create });
 
   async function handleFinish() {
@@ -120,9 +130,20 @@ export default function WorkoutSessionPage() {
     }
   }
 
-  function addSetForExercise(ex: { id: string; name: string; muscleGroup: string }) {
+  async function addSetForExercise(ex: { id: string; name: string; muscleGroup: string }) {
     const prev = [...sets].reverse().find((s) => s.exerciseId === ex.id);
     const newIdx = sets.length;
+
+    // Fetch last session data for this exercise if not already cached
+    if (!lastSessionMap[ex.id]) {
+      try {
+        const data = await workoutApi.getExerciseLastSession(ex.id);
+        if (data.length > 0) {
+          setLastSessionMap((m) => ({ ...m, [ex.id]: data }));
+        }
+      } catch { /* ignore */ }
+    }
+
     dispatch({
       type: 'ADD',
       payload: {
@@ -304,13 +325,22 @@ export default function WorkoutSessionPage() {
             </div>
 
             {selectedEx && (
-              <button onClick={addSet} className="btn-primary w-full mt-3 text-sm">
-                + {selectedEx.name} — Set Ekle
-              </button>
+              <div className="mt-3 space-y-2">
+                {/* Previous session hint */}
+                {selectedExLastSession && selectedExLastSession.length > 0 && (
+                  <div className="px-3 py-2 rounded-lg text-xs" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)', color: '#9ca3af' }}>
+                    <span className="text-orange-500 font-medium">Geçen seans: </span>
+                    {selectedExLastSession.map((s) => `${s.reps ?? '?'}×${s.weight_kg ? parseFloat(s.weight_kg) : 0}kg`).join(' · ')}
+                  </div>
+                )}
+                <button onClick={addSet} className="btn-primary w-full text-sm">
+                  + {selectedEx.name} — Set Ekle
+                </button>
+              </div>
             )}
           </div>
 
-          {/* Set log - redesigned */}
+          {/* Set log */}
           {exerciseOrder.length === 0 ? (
             <div className="card text-center py-10">
               <p className="text-4xl mb-2">💪</p>
@@ -322,11 +352,12 @@ export default function WorkoutSessionPage() {
               const color = MUSCLE_COLORS[exSets[0].muscleGroup] ?? '#9ca3af';
               const exObj = { id: exSets[0].exerciseId, name: exName, muscleGroup: exSets[0].muscleGroup };
               const activeSetInThisEx = editingIdx !== null && sets[editingIdx]?.exerciseName === exName;
+              const lastSession = lastSessionMap[exSets[0].exerciseId];
 
               return (
                 <div key={exName} className="card p-5">
                   {/* Exercise header */}
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-3">
                     <div className="w-1 h-5 rounded-full shrink-0" style={{ background: color }} />
                     <button
                       className="font-semibold text-white hover:text-orange-400 transition-colors text-left flex items-center gap-1.5"
@@ -348,6 +379,16 @@ export default function WorkoutSessionPage() {
                       {exSets[0].muscleGroup}
                     </span>
                   </div>
+
+                  {/* Previous session data */}
+                  {lastSession && lastSession.length > 0 && (
+                    <div className="mb-3 px-2.5 py-1.5 rounded-lg text-xs" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <span className="text-gray-600">Geçen seans: </span>
+                      <span className="text-gray-500">
+                        {lastSession.map((s) => `${s.reps ?? '?'}×${s.weight_kg ? parseFloat(s.weight_kg) : 0}kg`).join(' · ')}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Set chips row */}
                   <div className="flex items-center gap-2 flex-wrap">
@@ -436,6 +477,7 @@ export default function WorkoutSessionPage() {
                         <button
                           onClick={() => {
                             dispatch({ type: 'TOGGLE_DONE', payload: editingIdx });
+                            restTimerRef.current?.start(90); // otomatik dinlenme başlat
                             setEditingIdx(null);
                           }}
                           className="btn-primary flex-1"
@@ -462,7 +504,7 @@ export default function WorkoutSessionPage() {
 
         {/* Right: timer + stats */}
         <div className="space-y-4">
-          <RestTimer />
+          <RestTimer ref={restTimerRef} />
 
           {sets.length > 0 && (
             <div className="card p-5 space-y-3">

@@ -76,16 +76,18 @@ export default function SettingsPage() {
   // Kalori hesaplayıcı state — SettingsPage içinde, local ile aynı scope
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [age, setAge] = useState(25);
+  const [calcWeight, setCalcWeight] = useState(settings.weightKg);
+  const [calcHeight, setCalcHeight] = useState(settings.heightCm);
   const [activityLevel, setActivityLevel] = useState(1.55);
   const [calcGoal, setCalcGoal] = useState<'lose' | 'maintain' | 'gain'>('gain');
   const [targetWeight, setTargetWeight] = useState(settings.weightKg);
 
   const isDirty = JSON.stringify(local) !== JSON.stringify(settings);
 
-  // Kalori hesabı — doğrudan local.weightKg ve local.heightCm kullanıyor
+  // Kalori hesabı — calcWeight ve calcHeight state'lerini kullanıyor
   const calcResult = (() => {
-    const w = local.weightKg;
-    const h = local.heightCm;
+    const w = calcWeight;
+    const h = calcHeight;
     if (!w || !h || !age) return null;
 
     const bmr = gender === 'male'
@@ -168,11 +170,19 @@ export default function SettingsPage() {
       <div className="card space-y-5">
         <SectionTitle>Kalori Hesaplayıcı</SectionTitle>
 
-        {(!local.weightKg || !local.heightCm) && (
+        {(!calcWeight || !calcHeight) && (
           <p className="text-xs text-yellow-500 bg-yellow-500/10 rounded-lg px-3 py-2">
             Boy ve kilo bilgilerini yukarıdaki Profil bölümüne gir.
           </p>
         )}
+
+        {/* Kilo ve Boy */}
+        <div className="grid grid-cols-2 gap-4">
+          <GoalInput label="Kilo" value={calcWeight} onChange={setCalcWeight}
+            unit="kg" min={30} max={300} step={0.1} />
+          <GoalInput label="Boy" value={calcHeight} onChange={setCalcHeight}
+            unit="cm" min={100} max={250} />
+        </div>
 
         {/* Cinsiyet */}
         <div>
@@ -235,7 +245,7 @@ export default function SettingsPage() {
             value={targetWeight}
             onChange={setTargetWeight}
             unit="kg" min={30} max={300} step={0.5}
-            hint={`Mevcut: ${local.weightKg} kg`}
+            hint={`Mevcut: ${calcWeight} kg`}
           />
         )}
 

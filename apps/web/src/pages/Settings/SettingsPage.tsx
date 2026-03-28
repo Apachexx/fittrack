@@ -48,6 +48,244 @@ function getBmiCategory(bmi: number): { label: string; color: string } {
   return { label: 'Obez', color: '#f87171' };
 }
 
+const ACTIVITY_LEVELS = [
+  { value: 1.2,   label: 'Hareketsiz',        desc: 'Masa başı iş, egzersiz yok' },
+  { value: 1.375, label: 'Az Aktif',           desc: 'Haftada 1-3 gün hafif egzersiz' },
+  { value: 1.55,  label: 'Orta Aktif',         desc: 'Haftada 3-5 gün orta egzersiz' },
+  { value: 1.725, label: 'Çok Aktif',          desc: 'Haftada 6-7 gün ağır egzersiz' },
+  { value: 1.9,   label: 'Ekstra Aktif',       desc: 'Günde 2 antrenman veya fiziksel iş' },
+];
+
+const GOALS = [
+  { value: 'lose',     label: 'Yağ Yak',       delta: -500, color: '#3b82f6' },
+  { value: 'maintain', label: 'Kilo Koru',      delta: 0,    color: '#4ade80' },
+  { value: 'gain',     label: 'Kas Kazan',      delta: 300,  color: '#f97316' },
+];
+
+const MACRO_RATIOS: Record<string, { p: number; c: number; f: number }> = {
+  lose:     { p: 0.35, c: 0.35, f: 0.30 },
+  maintain: { p: 0.25, c: 0.45, f: 0.30 },
+  gain:     { p: 0.30, c: 0.45, f: 0.25 },
+};
+
+interface CalcState {
+  gender: 'male' | 'female';
+  age: number;
+  activityLevel: number;
+  goal: 'lose' | 'maintain' | 'gain';
+  targetWeight: number;
+}
+
+function CalorieCalculator({
+  weightKg,
+  heightCm,
+  onApply,
+}: {
+  weightKg: number;
+  heightCm: number;
+  onApply: (calories: number, protein: number, carbs: number, fat: number) => void;
+}) {
+  const [calc, setCalc] = useState<CalcState>({
+    gender: 'male',
+    age: 25,
+    activityLevel: 1.55,
+    goal: 'gain',
+    targetWeight: weightKg,
+  });
+
+  const canCalculate = weightKg > 0 && heightCm > 0 && calc.age > 0;
+
+  const result = (() => {
+    if (!canCalculate) return null;
+
+    // Mifflin-St Jeor BMR
+    const bmr =
+      calc.gender === 'male'
+        ? 10 * weightKg + 6.25 * heightCm - 5 * calc.age + 5
+        : 10 * weightKg + 6.25 * heightCm - 5 * calc.age - 161;
+
+    const tdee = Math.round(bmr * calc.activityLevel);
+    const goalDef = GOALS.find((g) => g.value === calc.goal)!;
+    const dailyCalories = tdee + goalDef.delta;
+
+    const ratios = MACRO_RATIOS[calc.goal];
+    const protein = Math.round((dailyCalories * ratios.p) / 4);
+    const carbs   = Math.round((dailyCalories * ratios.c) / 4);
+    const fat     = Math.round((dailyCalories * ratios.f) / 9);
+
+    // Kaç günde hedefe ulaşır
+    let daysToGoal: number | null = null;
+    const diff = calc.targetWeight - weightKg;
+    if (calc.goal !== 'maintain' && diff !== 0 && Math.abs(goalDef.delta) > 0) {
+      // 1 kg yağ ≈ 7700 kcal
+      const daysNeeded = Math.abs((diff * 7700) / goalDef.delta);
+      daysToGoal = Math.round(daysNeeded);
+    }
+
+    return { tdee, dailyCalories, protein, carbs, fat, daysToGoal, goalColor: goalDef.color };
+  })();
+
+  return (
+    <div className="card space-y-5">
+      <SectionTitle>Kalori Hesaplayıcı</SectionTitle>
+
+      {(!weightKg || !heightCm) && (
+        <p className="text-xs text-yellow-500 bg-yellow-500/10 rounded-lg px-3 py-2">
+          Boy ve kilo bilgilerini yukarıdaki Profil bölümüne gir.
+        </p>
+      )}
+
+      {/* Cinsiyet */}
+      <div>
+        <label className="label">Cinsiyet</label>
+        <div className="flex gap-2">
+          {(['male', 'female'] as const).map((g) => (
+            <button
+              key={g}
+              onClick={() => setCalc({ ...calc, gender: g })}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border ${
+                calc.gender === g
+                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                  : 'bg-transparent border-gray-800 text-gray-500 hover:border-gray-600'
+              }`}
+            >
+              {g === 'male' ? 'Erkek' : 'Kadın'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Yaş */}
+      <GoalInput
+        label="Yaş"
+        value={calc.age}
+        onChange={(v) => setCalc({ ...calc, age: v })}
+        unit="yıl"
+        min={10}
+        max={100}
+      />
+
+      {/* Aktivite seviyesi */}
+      <div>
+        <label className="label">Aktivite Seviyesi</label>
+        <div className="space-y-2">
+          {ACTIVITY_LEVELS.map((a) => (
+            <button
+              key={a.value}
+              onClick={() => setCalc({ ...calc, activityLevel: a.value })}
+              className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                calc.activityLevel === a.value
+                  ? 'bg-primary-500/10 border-primary-500/40 text-white'
+                  : 'bg-transparent border-gray-800 text-gray-400 hover:border-gray-600'
+              }`}
+            >
+              <span className="font-medium text-sm">{a.label}</span>
+              <span className="text-xs text-gray-500 ml-2">{a.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Hedef */}
+      <div>
+        <label className="label">Hedef</label>
+        <div className="flex gap-2">
+          {GOALS.map((g) => (
+            <button
+              key={g.value}
+              onClick={() => setCalc({ ...calc, goal: g.value as CalcState['goal'] })}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border ${
+                calc.goal === g.value
+                  ? 'border-transparent text-white'
+                  : 'bg-transparent border-gray-800 text-gray-500 hover:border-gray-600'
+              }`}
+              style={calc.goal === g.value ? { background: `${g.color}25`, borderColor: `${g.color}60`, color: g.color } : {}}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Hedef kilo */}
+      {calc.goal !== 'maintain' && (
+        <GoalInput
+          label={calc.goal === 'lose' ? 'Hedef Kilo' : 'Hedef Kilo'}
+          value={calc.targetWeight}
+          onChange={(v) => setCalc({ ...calc, targetWeight: v })}
+          unit="kg"
+          min={30}
+          max={300}
+          step={0.5}
+          hint={
+            calc.goal === 'lose'
+              ? `Mevcut: ${weightKg} kg → Vermek istediğin kilo`
+              : `Mevcut: ${weightKg} kg → Almak istediğin kilo`
+          }
+        />
+      )}
+
+      {/* Sonuç */}
+      {result && canCalculate && (
+        <div className="rounded-2xl p-5 space-y-4"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Hesaplama Sonucu</p>
+
+          {/* Kalori */}
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Günlük Kalori İhtiyacı</p>
+              <p className="text-4xl font-bold mt-1" style={{ color: result.goalColor }}>
+                {result.dailyCalories.toLocaleString()}
+                <span className="text-base font-normal text-gray-500 ml-1">kcal</span>
+              </p>
+              <p className="text-xs text-gray-600 mt-1">Bazal metabolizma × aktivite = {result.tdee} kcal/gün</p>
+            </div>
+            {result.daysToGoal && calc.targetWeight !== weightKg && (
+              <div className="text-right">
+                <p className="text-xs text-gray-500">Hedefe Ulaşma</p>
+                <p className="text-2xl font-bold text-white mt-1">{result.daysToGoal}</p>
+                <p className="text-xs text-gray-500">gün (~{Math.round(result.daysToGoal / 7)} hafta)</p>
+              </div>
+            )}
+          </div>
+
+          {/* Makrolar */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl p-3 text-center"
+              style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.15)' }}>
+              <p className="text-xs text-gray-500 mb-1">Protein</p>
+              <p className="text-xl font-bold text-blue-400">{result.protein}g</p>
+              <p className="text-xs text-gray-600 mt-0.5">{Math.round(MACRO_RATIOS[calc.goal].p * 100)}%</p>
+            </div>
+            <div className="rounded-xl p-3 text-center"
+              style={{ background: 'rgba(250,204,21,0.08)', border: '1px solid rgba(250,204,21,0.15)' }}>
+              <p className="text-xs text-gray-500 mb-1">Karbonhidrat</p>
+              <p className="text-xl font-bold text-yellow-400">{result.carbs}g</p>
+              <p className="text-xs text-gray-600 mt-0.5">{Math.round(MACRO_RATIOS[calc.goal].c * 100)}%</p>
+            </div>
+            <div className="rounded-xl p-3 text-center"
+              style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.15)' }}>
+              <p className="text-xs text-gray-500 mb-1">Yağ</p>
+              <p className="text-xl font-bold text-pink-400">{result.fat}g</p>
+              <p className="text-xs text-gray-600 mt-0.5">{Math.round(MACRO_RATIOS[calc.goal].f * 100)}%</p>
+            </div>
+          </div>
+
+          {/* Apply button */}
+          <button
+            onClick={() => onApply(result.dailyCalories, result.protein, result.carbs, result.fat)}
+            className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all"
+            style={{ background: `${result.goalColor}30`, border: `1px solid ${result.goalColor}50` }}
+          >
+            Bu Değerleri Hedeflerime Uygula
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { settings, save } = useSettings();
   const { user } = useAuth();
@@ -57,6 +295,10 @@ export default function SettingsPage() {
 
   function handleSave() {
     save(local);
+  }
+
+  function handleApplyCalc(calories: number, protein: number, carbs: number, fat: number) {
+    setLocal((prev) => ({ ...prev, calorieGoal: calories, proteinGoal: protein, carbsGoal: carbs, fatGoal: fat }));
   }
 
   const bmi =
@@ -129,6 +371,13 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* Calorie Calculator */}
+      <CalorieCalculator
+        weightKg={local.weightKg}
+        heightCm={local.heightCm}
+        onApply={handleApplyCalc}
+      />
+
       {/* Nutrition Goals */}
       <div className="card space-y-5">
         <SectionTitle>Beslenme Hedefleri</SectionTitle>
@@ -179,7 +428,6 @@ export default function SettingsPage() {
           />
         </div>
 
-        {/* Calorie preview */}
         {local.calorieGoal > 0 && (
           <div className="rounded-xl p-4 space-y-2"
             style={{ background: 'rgba(249,115,22,0.05)', border: '1px solid rgba(249,115,22,0.12)' }}>

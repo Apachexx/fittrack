@@ -166,11 +166,18 @@ export default function ProgressPage() {
     week_start?: string; weekStart?: string;
     total_workouts?: number; totalWorkouts?: number;
     total_volume?: number; totalVolume?: number;
-  }> | undefined)?.map((w) => ({
-    week: format(new Date(w.week_start ?? w.weekStart ?? ''), 'd MMM', { locale: tr }),
-    antrenman: Number(w.total_workouts ?? w.totalWorkouts ?? 0),
-    hacim: Math.round(Number(w.total_volume ?? w.totalVolume ?? 0) / 1000),
-  }));
+  }> | undefined)?.reduce<Array<{ week: string; antrenman: number; hacim: number }>>((acc, w) => {
+    const raw = w.week_start ?? w.weekStart;
+    if (!raw) return acc;
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return acc;
+    acc.push({
+      week: format(d, 'd MMM', { locale: tr }),
+      antrenman: Number(w.total_workouts ?? w.totalWorkouts ?? 0),
+      hacim: Math.round(Number(w.total_volume ?? w.totalVolume ?? 0) / 1000),
+    });
+    return acc;
+  }, []);
 
   const tooltipStyle = {
     contentStyle: { backgroundColor: '#0f1a24', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#f1f5f9' },
@@ -593,11 +600,14 @@ export default function ProgressPage() {
                 <BarChart data={(prHistory as Array<{
                   weightKg?: number; weight_kg?: string | number;
                   reps?: number; achievedAt?: string; achieved_at?: string;
-                }>).map((d) => ({
-                  date: format(new Date(d.achievedAt ?? d.achieved_at ?? ''), 'd MMM', { locale: tr }),
-                  ağırlık: d.weightKg ?? parseFloat(String(d.weight_kg ?? 0)),
-                  tekrar: d.reps,
-                }))}>
+                }>).reduce<Array<{ date: string; ağırlık: number; tekrar: number | undefined }>>((acc, d) => {
+                  const raw = d.achievedAt ?? d.achieved_at;
+                  if (!raw) return acc;
+                  const dt = new Date(raw);
+                  if (isNaN(dt.getTime())) return acc;
+                  acc.push({ date: format(dt, 'd MMM', { locale: tr }), ağırlık: d.weightKg ?? parseFloat(String(d.weight_kg ?? 0)), tekrar: d.reps });
+                  return acc;
+                }, [])}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="date" stroke="#4b5563" tick={{ fontSize: 11, fill: '#6b7280' }} />
                   <YAxis stroke="#4b5563" tick={{ fontSize: 11, fill: '#6b7280' }} />

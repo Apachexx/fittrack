@@ -164,10 +164,6 @@ export default function WorkoutSessionPage() {
     setEditingIdx(newIdx);
   }
 
-  function addSet() {
-    if (!selectedEx) return;
-    addSetForExercise(selectedEx);
-  }
 
   // Preserve exercise order by first occurrence in sets array
   const exerciseOrder: string[] = [];
@@ -331,13 +327,19 @@ export default function WorkoutSessionPage() {
 
             {selectedEx && (
               <div className="mt-3 space-y-2">
-                {/* Previous session hint */}
                 {selectedExLastSession && selectedExLastSession.length > 0 && (
                   <div className="px-3 py-2 rounded-lg text-xs" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)', color: '#9ca3af' }}>
                     <span className="text-orange-500 font-medium">Geçen seans: </span>
                     {selectedExLastSession.map((s) => `${s.reps ?? '?'}×${s.weight_kg ? parseFloat(s.weight_kg) : 0}kg`).join(' · ')}
                   </div>
                 )}
+                <button
+                  onClick={() => addSetForExercise(selectedEx)}
+                  className="w-full py-2 rounded-xl text-sm font-semibold transition-all"
+                  style={{ background: 'rgba(249,115,22,0.12)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.25)' }}
+                >
+                  + {selectedEx.name} Ekle
+                </button>
               </div>
             )}
           </div>}
@@ -352,7 +354,6 @@ export default function WorkoutSessionPage() {
             exerciseOrder.map((exName) => {
               const exSets = grouped[exName];
               const color = MUSCLE_COLORS[exSets[0].muscleGroup] ?? '#9ca3af';
-              const exObj = { id: exSets[0].exerciseId, name: exName, muscleGroup: exSets[0].muscleGroup };
               const activeSetInThisEx = editingIdx !== null && sets[editingIdx]?.exerciseName === exName;
               const lastSession = lastSessionMap[exSets[0].exerciseId];
 

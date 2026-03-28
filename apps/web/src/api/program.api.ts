@@ -84,7 +84,7 @@ export interface CustomProgramInput {
 
 export const programApi = {
   list: (params?: { level?: string; goal?: string }) =>
-    api.get<unknown[]>('/programs', { params }).then((r) => r.data.map(toProgram)),
+    api.get<unknown[]>('/programs', { params }).then((r) => (Array.isArray(r.data) ? r.data.map(toProgram) : [])),
   get: (id: string) =>
     api.get<unknown>(`/programs/${id}`).then((r) => toProgram(r.data)),
   enroll: (id: string) =>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { programApi } from '@/api/program.api';
@@ -33,12 +33,12 @@ export default function ProgramDetailPage() {
     queryKey: ['program', id],
     queryFn: () => programApi.get(id!),
     enabled: !!id,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    select: (data: any) => {
-      if (isPublic === null) setIsPublic(data.is_public ?? false);
-      return data;
-    },
   });
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (program && isPublic === null) setIsPublic((program as any).is_public ?? false);
+  }, [program, isPublic]);
 
   const { data: activeProgram } = useQuery({
     queryKey: ['active-program'],

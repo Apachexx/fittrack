@@ -31,6 +31,7 @@ interface DayExercise {
 
 interface DayPlan {
   dayNumber: number;
+  name: string;
   exercises: DayExercise[];
 }
 

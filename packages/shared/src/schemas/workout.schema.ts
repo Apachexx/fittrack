@@ -13,6 +13,7 @@ export const addSetSchema = z.object({
   restSecs: z.number().int().nonnegative().optional(),
   isSuperset: z.boolean().optional().default(false),
   supersetGroup: z.number().int().optional(),
+  completed: z.boolean().optional().default(false),
 });
 
 export const createExerciseSchema = z.object({

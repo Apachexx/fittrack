@@ -103,9 +103,10 @@ export default function ProgressPage() {
     queryKey: ['muscle-distribution'],
     queryFn: () => progressApi.getMuscleDistribution(),
   });
-  const { data: exercises } = useQuery({
-    queryKey: ['exercises'],
+  const { data: exercises = [] } = useQuery({
+    queryKey: ['exercises-all'],
     queryFn: () => workoutApi.listExercises(),
+    staleTime: 5 * 60 * 1000,
   });
   const { data: prHistory } = useQuery({
     queryKey: ['pr-history', selectedExercise],
@@ -389,7 +390,7 @@ export default function ProgressPage() {
                     <tbody>
                       {[...weeklyData].reverse().map((w, i) => {
                         const isThis = i === 0;
-                        const fillPct = bestW > 0 ? (w.antrenman / bestW) * 100 : 0;
+                        // fillPct unused, squares are rendered by Array.from length
                         const hacimPct = maxHacim > 0 ? (w.hacim / maxHacim) * 100 : 0;
                         return (
                           <tr key={i} className="group">

@@ -80,7 +80,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             'focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40',
             'transition-all duration-150',
             'hover:border-white/20',
-            icon && 'pl-10',
+            !!icon && 'pl-10',
             error && 'border-red-500/40 focus:ring-red-500/40',
             className
           )}

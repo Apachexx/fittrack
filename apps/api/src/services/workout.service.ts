@@ -99,6 +99,7 @@ export async function addSet(
     restSecs?: number;
     isSuperset?: boolean;
     supersetGroup?: number;
+    completed?: boolean;
   }
 ) {
   // Kullanıcının antrenmanı olduğunu doğrula
@@ -110,8 +111,8 @@ export async function addSet(
 
   return queryOne<SetRow>(
     `INSERT INTO workout_sets
-       (workout_id, exercise_id, set_number, reps, weight_kg, rest_secs, is_superset, superset_group)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (workout_id, exercise_id, set_number, reps, weight_kg, rest_secs, is_superset, superset_group, completed)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING *`,
     [
       workoutId,
@@ -122,6 +123,7 @@ export async function addSet(
       data.restSecs ?? null,
       data.isSuperset ?? false,
       data.supersetGroup ?? null,
+      data.completed ?? false,
     ]
   );
 }

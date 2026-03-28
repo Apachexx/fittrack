@@ -123,6 +123,7 @@ export default function WorkoutSessionPage() {
           setNumber: s.setNumber,
           reps: parseInt(s.reps) || undefined,
           weightKg: parseFloat(s.weightKg) || undefined,
+          completed: s.done,
         });
       }
       await workoutApi.update(workout.id, { endedAt: new Date().toISOString() } as Parameters<typeof workoutApi.update>[1]);

@@ -4,7 +4,7 @@ import { useSettings } from '@/hooks/useSettings';
 import Select from '@/components/ui/Select';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, BarChart, Bar, ReferenceLine, ComposedChart, Area,
+  PieChart, Pie, Cell, Legend, BarChart, Bar,
 } from 'recharts';
 import { progressApi } from '@/api/progress.api';
 import { workoutApi } from '@/api/workout.api';
@@ -342,8 +342,9 @@ export default function ProgressPage() {
             const avgW = (totalW / weeklyData.length).toFixed(1);
             const bestW = Math.max(...weeklyData.map((w) => w.antrenman));
             const thisW = weeklyData[weeklyData.length - 1]?.antrenman ?? 0;
+            const maxHacim = Math.max(...weeklyData.map((w) => w.hacim), 1);
             return (
-              <div className="card p-4 space-y-3">
+              <div className="card p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-white">Haftalık Antrenman</h3>
                   <span className="text-xs text-gray-500">{weeklyData.length} hafta</span>
@@ -363,45 +364,74 @@ export default function ProgressPage() {
                     </div>
                   ))}
                 </div>
-                {/* Chart */}
-                <ResponsiveContainer width="100%" height={150}>
-                  <ComposedChart data={weeklyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                    <defs>
-                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f97316" stopOpacity={0.9} />
-                        <stop offset="100%" stopColor="#f97316" stopOpacity={0.4} />
-                      </linearGradient>
-                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis dataKey="week" stroke="#374151" tick={{ fontSize: 9, fill: '#6b7280' }} tickLine={false} />
-                    <YAxis yAxisId="left" stroke="#374151" tick={{ fontSize: 9, fill: '#6b7280' }} allowDecimals={false} width={22} tickLine={false} />
-                    <YAxis yAxisId="right" orientation="right" stroke="#374151" tick={{ fontSize: 9, fill: '#4b5563' }} width={28} tickLine={false}
-                      tickFormatter={(v: number) => `${v}t`} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#0f1a24', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#f1f5f9', fontSize: 12 }}
-                      labelStyle={{ color: '#94a3b8', marginBottom: 4 }}
-                      formatter={(v: number, name: string) =>
-                        name === 'antrenman' ? [`${v} antrenman`, 'Antrenman'] : [`${v} ton`, 'Hacim']
-                      }
-                    />
-                    <ReferenceLine yAxisId="left" y={settings.workoutsPerWeekGoal}
-                      stroke="rgba(249,115,22,0.5)" strokeDasharray="4 3"
-                      label={{ value: 'Hedef', position: 'insideTopRight', fill: 'rgba(249,115,22,0.6)', fontSize: 9 }} />
-                    <Bar yAxisId="left" dataKey="antrenman" fill="url(#barGrad)" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                    <Area yAxisId="right" type="monotone" dataKey="hacim" stroke="#3b82f6" strokeWidth={1.5}
-                      fill="url(#areaGrad)" dot={false} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-                <div className="flex gap-3 justify-end">
-                  <span className="flex items-center gap-1 text-[10px] text-gray-500">
-                    <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#f97316' }} /> Antrenman sayısı
+                {/* Simple bar grid table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse" style={{ minWidth: '400px' }}>
+                    <thead>
+                      <tr>
+                        <th className="text-left pb-2 pr-3 text-[10px] font-medium text-gray-600 w-16">Hafta</th>
+                        <th className="pb-2 pr-2 text-[10px] font-medium text-gray-600 text-right w-8">Ant.</th>
+                        <th className="pb-2 text-[10px] font-medium text-gray-600">İlerleme</th>
+                        <th className="pb-2 pl-2 text-[10px] font-medium text-gray-600 text-right w-16">Hacim</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...weeklyData].reverse().map((w, i) => {
+                        const isThis = i === 0;
+                        const fillPct = bestW > 0 ? (w.antrenman / bestW) * 100 : 0;
+                        const hacimPct = maxHacim > 0 ? (w.hacim / maxHacim) * 100 : 0;
+                        return (
+                          <tr key={i} className="group">
+                            <td className="py-1.5 pr-3 text-[10px] text-gray-500 whitespace-nowrap">
+                              {w.week}
+                              {isThis && <span className="ml-1 text-orange-500 font-semibold">←</span>}
+                            </td>
+                            <td className="py-1.5 pr-2 text-right">
+                              <span className="text-xs font-bold" style={{ color: isThis ? '#f97316' : '#9ca3af' }}>
+                                {w.antrenman}
+                              </span>
+                            </td>
+                            <td className="py-1.5">
+                              <div className="flex gap-0.5 items-center">
+                                {Array.from({ length: bestW || 1 }, (_, ci) => (
+                                  <div key={ci} className="h-5 flex-1 rounded-sm transition-all"
+                                    style={{
+                                      background: ci < w.antrenman
+                                        ? isThis ? 'rgba(249,115,22,0.8)' : 'rgba(249,115,22,0.35)'
+                                        : 'rgba(255,255,255,0.05)',
+                                      border: ci < w.antrenman
+                                        ? isThis ? '1px solid rgba(249,115,22,0.5)' : '1px solid rgba(249,115,22,0.2)'
+                                        : '1px solid rgba(255,255,255,0.07)',
+                                    }}
+                                  />
+                                ))}
+                                {/* volume bar overlay */}
+                                {w.hacim > 0 && (
+                                  <div className="ml-1 h-5 rounded-sm" title={`${w.hacim}t hacim`}
+                                    style={{
+                                      width: `${Math.max(hacimPct * 0.4, 4)}%`,
+                                      background: 'rgba(59,130,246,0.4)',
+                                      border: '1px solid rgba(59,130,246,0.3)',
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-1.5 pl-2 text-right text-[10px] text-gray-600">
+                              {w.hacim > 0 ? `${w.hacim}t` : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex items-center gap-1 text-[10px] text-gray-600">
+                    <span className="w-3 h-3 rounded-sm inline-block" style={{ background: 'rgba(249,115,22,0.7)' }} /> Antrenman
                   </span>
-                  <span className="flex items-center gap-1 text-[10px] text-gray-500">
-                    <span className="w-4 h-px inline-block" style={{ background: '#3b82f6' }} /> Hacim (ton)
+                  <span className="flex items-center gap-1 text-[10px] text-gray-600">
+                    <span className="w-3 h-3 rounded-sm inline-block" style={{ background: 'rgba(59,130,246,0.5)' }} /> Hacim
                   </span>
                 </div>
               </div>

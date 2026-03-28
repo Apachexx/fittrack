@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/context/AuthContext';
 
@@ -90,13 +90,18 @@ function CalorieCalculator({
     age: 25,
     activityLevel: 1.55,
     goal: 'gain',
-    targetWeight: weightKg,
+    targetWeight: weightKg || 0,
   });
 
-  const canCalculate = weightKg > 0 && heightCm > 0 && calc.age > 0;
+  // weightKg prop değişince targetWeight'i güncelle
+  useEffect(() => {
+    if (weightKg > 0) {
+      setCalc((prev) => ({ ...prev, targetWeight: weightKg }));
+    }
+  }, [weightKg]);
 
-  const result = (() => {
-    if (!canCalculate) return null;
+  const result = useMemo(() => {
+    if (!weightKg || !heightCm || !calc.age) return null;
 
     // Mifflin-St Jeor BMR
     const bmr =
@@ -113,17 +118,14 @@ function CalorieCalculator({
     const carbs   = Math.round((dailyCalories * ratios.c) / 4);
     const fat     = Math.round((dailyCalories * ratios.f) / 9);
 
-    // Kaç günde hedefe ulaşır
     let daysToGoal: number | null = null;
     const diff = calc.targetWeight - weightKg;
-    if (calc.goal !== 'maintain' && diff !== 0 && Math.abs(goalDef.delta) > 0) {
-      // 1 kg yağ ≈ 7700 kcal
-      const daysNeeded = Math.abs((diff * 7700) / goalDef.delta);
-      daysToGoal = Math.round(daysNeeded);
+    if (calc.goal !== 'maintain' && Math.abs(diff) >= 0.5 && Math.abs(goalDef.delta) > 0) {
+      daysToGoal = Math.round(Math.abs((diff * 7700) / goalDef.delta));
     }
 
     return { tdee, dailyCalories, protein, carbs, fat, daysToGoal, goalColor: goalDef.color };
-  })();
+  }, [weightKg, heightCm, calc]);
 
   return (
     <div className="card space-y-5">
@@ -226,7 +228,7 @@ function CalorieCalculator({
       )}
 
       {/* Sonuç */}
-      {result && canCalculate && (
+      {result && (
         <div className="rounded-2xl p-5 space-y-4"
           style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Hesaplama Sonucu</p>

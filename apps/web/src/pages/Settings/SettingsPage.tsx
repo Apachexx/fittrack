@@ -57,16 +57,18 @@ const ACTIVITY_LEVELS = [
 ];
 
 const GOALS_CALC = [
-  { value: 'lose',     label: 'Yağ Yak',   delta: -500, color: '#3b82f6' },
-  { value: 'maintain', label: 'Kilo Koru', delta: 0,    color: '#4ade80' },
-  { value: 'gain',     label: 'Kas Kazan', delta: 300,  color: '#f97316' },
+  { value: 'lose',     label: 'Yağ Yak',   multiplier: 0.80, color: '#3b82f6' },
+  { value: 'maintain', label: 'Kilo Koru', multiplier: 1.00, color: '#4ade80' },
+  { value: 'gain',     label: 'Kas Kazan', multiplier: 1.10, color: '#f97316' },
 ];
 
-const MACRO_RATIOS: Record<string, { p: number; c: number; f: number }> = {
-  lose:     { p: 0.35, c: 0.35, f: 0.30 },
-  maintain: { p: 0.25, c: 0.45, f: 0.30 },
-  gain:     { p: 0.30, c: 0.45, f: 0.25 },
+// ISSN & Morton 2018 meta-analiz kaynaklı — kg başına gram
+const PROTEIN_PER_KG: Record<string, number> = {
+  lose:     2.4,  // ISSN: 2.3–3.1 g/kg (kas koruma için yüksek tutulur)
+  maintain: 1.8,  // ISSN: 1.6–2.0 g/kg aktif bireyler
+  gain:     2.2,  // Morton 2018 meta-analiz: 2.0–2.4 g/kg
 };
+const FAT_MIN_PER_KG = 0.8; // Hormon sağlığı için minimum (araştırma konsensüsü)
 
 export default function SettingsPage() {
   const { settings, save } = useSettings();
@@ -84,34 +86,43 @@ export default function SettingsPage() {
 
   const isDirty = JSON.stringify(local) !== JSON.stringify(settings);
 
-  // Kalori hesabı — hedef kiloya göre hesaplanır
+  // Kalori hesabı — ISSN & Mifflin-St Jeor (2024 bilimsel standartları)
   const calcResult = (() => {
     const current = calcWeight;
     const target  = calcGoal !== 'maintain' && targetWeight > 0 ? targetWeight : calcWeight;
     const h = calcHeight;
     if (!current || !h || !age) return null;
 
-    // BMR hedef kiloya göre hesaplanır
+    // Mifflin-St Jeor BMR — hedef kiloya göre
     const bmr = gender === 'male'
       ? 10 * target + 6.25 * h - 5 * age + 5
       : 10 * target + 6.25 * h - 5 * age - 161;
 
     const tdee = Math.round(bmr * activityLevel);
     const goalDef = GOALS_CALC.find((g) => g.value === calcGoal)!;
-    const dailyCalories = tdee + goalDef.delta;
-    const ratios = MACRO_RATIOS[calcGoal];
-    const protein = Math.round((dailyCalories * ratios.p) / 4);
-    const carbs   = Math.round((dailyCalories * ratios.c) / 4);
-    const fat     = Math.round((dailyCalories * ratios.f) / 9);
+    const dailyCalories = Math.round(tdee * goalDef.multiplier);
 
-    // Hedefe ulaşma süresi mevcut kilo farkına göre
+    // Minimum kalori sınırları
+    const minCal = gender === 'male' ? 1500 : 1200;
+    const safeDailyCalories = Math.max(dailyCalories, minCal);
+
+    // Protein: ISSN g/kg önerisi — hedef kiloya göre
+    const protein = Math.round(PROTEIN_PER_KG[calcGoal] * target);
+    // Yağ: minimum 0.8g/kg hormon sağlığı için — hedef kiloya göre
+    const fat = Math.round(Math.max(FAT_MIN_PER_KG * target, safeDailyCalories * 0.20 / 9));
+    // Karbonhidrat: kalan kaloriyi doldurur
+    const carbKcal = safeDailyCalories - (protein * 4) - (fat * 9);
+    const carbs = Math.max(0, Math.round(carbKcal / 4));
+
+    // Hedefe ulaşma süresi: kalori farkı başına 7700 kcal = 1 kg yağ
+    const caloricDelta = Math.abs(tdee - safeDailyCalories);
     const diff = target - current;
     let daysToGoal: number | null = null;
-    if (calcGoal !== 'maintain' && Math.abs(diff) >= 0.5 && Math.abs(goalDef.delta) > 0) {
-      daysToGoal = Math.round(Math.abs((diff * 7700) / goalDef.delta));
+    if (calcGoal !== 'maintain' && Math.abs(diff) >= 0.5 && caloricDelta > 0) {
+      daysToGoal = Math.round(Math.abs(diff) * 7700 / caloricDelta);
     }
 
-    return { tdee, dailyCalories, protein, carbs, fat, daysToGoal, goalColor: goalDef.color };
+    return { tdee, dailyCalories: safeDailyCalories, protein, carbs, fat, daysToGoal, goalColor: goalDef.color };
   })();
 
   const bmi =
@@ -282,19 +293,19 @@ export default function SettingsPage() {
                 style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.15)' }}>
                 <p className="text-xs text-gray-500 mb-1">Protein</p>
                 <p className="text-xl font-bold text-blue-400">{calcResult.protein}g</p>
-                <p className="text-xs text-gray-600 mt-0.5">{Math.round(MACRO_RATIOS[calcGoal].p * 100)}%</p>
+                <p className="text-xs text-gray-600 mt-0.5">{PROTEIN_PER_KG[calcGoal]}g/kg</p>
               </div>
               <div className="rounded-xl p-3 text-center"
                 style={{ background: 'rgba(250,204,21,0.08)', border: '1px solid rgba(250,204,21,0.15)' }}>
                 <p className="text-xs text-gray-500 mb-1">Karbonhidrat</p>
                 <p className="text-xl font-bold text-yellow-400">{calcResult.carbs}g</p>
-                <p className="text-xs text-gray-600 mt-0.5">{Math.round(MACRO_RATIOS[calcGoal].c * 100)}%</p>
+                <p className="text-xs text-gray-600 mt-0.5">kalan kalori</p>
               </div>
               <div className="rounded-xl p-3 text-center"
                 style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.15)' }}>
                 <p className="text-xs text-gray-500 mb-1">Yağ</p>
                 <p className="text-xl font-bold text-pink-400">{calcResult.fat}g</p>
-                <p className="text-xs text-gray-600 mt-0.5">{Math.round(MACRO_RATIOS[calcGoal].f * 100)}%</p>
+                <p className="text-xs text-gray-600 mt-0.5">≥{FAT_MIN_PER_KG}g/kg</p>
               </div>
             </div>
 

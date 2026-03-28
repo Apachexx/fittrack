@@ -60,7 +60,7 @@ const navItems = [
   },
   {
     to: '/settings',
-    label: 'Ayarlar',
+    label: 'Profil',
     icon: (active: boolean) => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.8} className="w-5 h-5">
         <circle cx="12" cy="12" r="3" />

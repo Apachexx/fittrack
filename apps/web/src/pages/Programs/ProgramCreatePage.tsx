@@ -40,9 +40,6 @@ export default function ProgramCreatePage() {
 
   // Program info
   const [title, setTitle] = useState('');
-  const [level, setLevel] = useState('intermediate');
-  const [goal, setGoal] = useState('hypertrophy');
-  const [durationWeeks, setDurationWeeks] = useState(8);
 
   // Day selection
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 3, 5]);
@@ -121,7 +118,7 @@ export default function ProgramCreatePage() {
 
     if (days.length === 0) return;
 
-    createMutation.mutate({ title, level, goal, durationWeeks, days });
+    createMutation.mutate({ title, level: 'intermediate', goal: 'hypertrophy', durationWeeks: 8, days });
   }
 
   const canCreate = title.trim().length > 0 &&
@@ -154,35 +151,6 @@ export default function ProgramCreatePage() {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="label">Süre</label>
-            <select className="input"
-              value={durationWeeks}
-              onChange={(e) => setDurationWeeks(parseInt(e.target.value))}>
-              {[4, 6, 8, 10, 12, 16].map((w) => (
-                <option key={w} value={w}>{w} hafta</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Seviye</label>
-            <select className="input" value={level} onChange={(e) => setLevel(e.target.value)}>
-              <option value="beginner">Başlangıç</option>
-              <option value="intermediate">Orta</option>
-              <option value="advanced">İleri</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Hedef</label>
-            <select className="input" value={goal} onChange={(e) => setGoal(e.target.value)}>
-              <option value="strength">Kuvvet</option>
-              <option value="hypertrophy">Kas Kitlesi</option>
-              <option value="endurance">Dayanıklılık</option>
-              <option value="weight_loss">Yağ Yakımı</option>
-            </select>
-          </div>
-        </div>
       </div>
 
       {/* Day selector */}
@@ -246,7 +214,7 @@ export default function ProgramCreatePage() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="label text-[10px]">Set</label>
                     <div className="flex items-center gap-1">
@@ -269,20 +237,6 @@ export default function ProgramCreatePage() {
                       onChange={(e) => updateExercise(dayNum, idx, 'reps', e.target.value)}
                       placeholder="8"
                     />
-                  </div>
-                  <div>
-                    <label className="label text-[10px]">Dinlenme</label>
-                    <select
-                      className="input py-1 text-sm"
-                      value={ex.restSecs}
-                      onChange={(e) => updateExercise(dayNum, idx, 'restSecs', parseInt(e.target.value))}
-                    >
-                      <option value={30}>30s</option>
-                      <option value={60}>1dk</option>
-                      <option value={90}>90s</option>
-                      <option value={120}>2dk</option>
-                      <option value={180}>3dk</option>
-                    </select>
                   </div>
                 </div>
 

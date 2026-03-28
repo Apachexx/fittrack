@@ -140,7 +140,7 @@ export default function DashboardPage() {
             {greeting}, <span className="gradient-text">{firstName}</span> 👋
           </h1>
         </div>
-        <Link to="/workouts/new" className="btn-primary flex items-center gap-2 shrink-0">
+        <Link to="/workouts/start" className="btn-primary flex items-center gap-2 shrink-0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
             <path d="M12 5v14M5 12h14" strokeLinecap="round" />
           </svg>
@@ -253,7 +253,7 @@ export default function DashboardPage() {
               <p className="text-4xl mb-3">🏋️</p>
               <p className="text-gray-400 font-medium">Henüz antrenman yok</p>
               <p className="text-gray-600 text-sm mt-1">İlk antrenmana bugün başla</p>
-              <Link to="/workouts/new" className="btn-primary mt-4 text-sm inline-flex">
+              <Link to="/workouts/start" className="btn-primary mt-4 text-sm inline-flex">
                 Antrenman Başlat
               </Link>
             </div>
@@ -362,7 +362,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold text-gray-300 mb-3">Hızlı Erişim</h2>
             <div className="space-y-1.5">
               {[
-                { to: '/workouts/new', icon: '🏋️', label: 'Antrenman Başlat', desc: 'Yeni seans' },
+                { to: '/workouts/start', icon: '🏋️', label: 'Antrenman Başlat', desc: 'Yeni seans' },
                 { to: '/nutrition', icon: '🍎', label: 'Öğün Ekle', desc: 'Kalori takibi' },
                 { to: '/progress', icon: '📏', label: 'Ölçüm Kaydet', desc: 'Kilo & vücut' },
                 { to: '/programs', icon: '📋', label: 'Programlar', desc: 'Hazır planlar' },

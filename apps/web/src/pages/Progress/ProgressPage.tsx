@@ -4,7 +4,7 @@ import { useSettings } from '@/hooks/useSettings';
 import Select from '@/components/ui/Select';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, BarChart, Bar, ReferenceLine,
+  PieChart, Pie, Cell, Legend, BarChart, Bar, ReferenceLine, ComposedChart, Area,
 } from 'recharts';
 import { progressApi } from '@/api/progress.api';
 import { workoutApi } from '@/api/workout.api';
@@ -337,21 +337,76 @@ export default function ProgressPage() {
             </div>
           )}
 
-          {weeklyData && weeklyData.length > 0 && (
-            <div className="card p-4">
-              <h3 className="text-sm font-semibold text-white mb-3">Haftalık Antrenman</h3>
-              <ResponsiveContainer width="100%" height={130}>
-                <BarChart data={weeklyData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="week" stroke="#4b5563" tick={{ fontSize: 10, fill: '#6b7280' }} />
-                  <YAxis stroke="#4b5563" tick={{ fontSize: 10, fill: '#6b7280' }} allowDecimals={false} width={30} />
-                  <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v} antrenman`, '']} />
-                  <ReferenceLine y={settings.workoutsPerWeekGoal} stroke="rgba(249,115,22,0.4)" strokeDasharray="4 4" />
-                  <Bar dataKey="antrenman" fill="#f97316" radius={[3, 3, 0, 0]} opacity={0.85} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          {weeklyData && weeklyData.length > 0 && (() => {
+            const totalW = weeklyData.reduce((s, w) => s + w.antrenman, 0);
+            const avgW = (totalW / weeklyData.length).toFixed(1);
+            const bestW = Math.max(...weeklyData.map((w) => w.antrenman));
+            const thisW = weeklyData[weeklyData.length - 1]?.antrenman ?? 0;
+            return (
+              <div className="card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white">Haftalık Antrenman</h3>
+                  <span className="text-xs text-gray-500">{weeklyData.length} hafta</span>
+                </div>
+                {/* Summary stats */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Bu Hafta', value: thisW, unit: 'antrenman', color: '#f97316' },
+                    { label: 'Haftalık Ort.', value: avgW, unit: '/hafta', color: '#94a3b8' },
+                    { label: 'En İyi Hafta', value: bestW, unit: 'antrenman', color: '#22c55e' },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-xl p-2.5 text-center"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <p className="text-xs text-gray-500 mb-0.5">{s.label}</p>
+                      <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
+                      <p className="text-[10px] text-gray-600">{s.unit}</p>
+                    </div>
+                  ))}
+                </div>
+                {/* Chart */}
+                <ResponsiveContainer width="100%" height={150}>
+                  <ComposedChart data={weeklyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                    <defs>
+                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f97316" stopOpacity={0.9} />
+                        <stop offset="100%" stopColor="#f97316" stopOpacity={0.4} />
+                      </linearGradient>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="week" stroke="#374151" tick={{ fontSize: 9, fill: '#6b7280' }} tickLine={false} />
+                    <YAxis yAxisId="left" stroke="#374151" tick={{ fontSize: 9, fill: '#6b7280' }} allowDecimals={false} width={22} tickLine={false} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#374151" tick={{ fontSize: 9, fill: '#4b5563' }} width={28} tickLine={false}
+                      tickFormatter={(v: number) => `${v}t`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0f1a24', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#f1f5f9', fontSize: 12 }}
+                      labelStyle={{ color: '#94a3b8', marginBottom: 4 }}
+                      formatter={(v: number, name: string) =>
+                        name === 'antrenman' ? [`${v} antrenman`, 'Antrenman'] : [`${v} ton`, 'Hacim']
+                      }
+                    />
+                    <ReferenceLine yAxisId="left" y={settings.workoutsPerWeekGoal}
+                      stroke="rgba(249,115,22,0.5)" strokeDasharray="4 3"
+                      label={{ value: 'Hedef', position: 'insideTopRight', fill: 'rgba(249,115,22,0.6)', fontSize: 9 }} />
+                    <Bar yAxisId="left" dataKey="antrenman" fill="url(#barGrad)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                    <Area yAxisId="right" type="monotone" dataKey="hacim" stroke="#3b82f6" strokeWidth={1.5}
+                      fill="url(#areaGrad)" dot={false} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+                <div className="flex gap-3 justify-end">
+                  <span className="flex items-center gap-1 text-[10px] text-gray-500">
+                    <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#f97316' }} /> Antrenman sayısı
+                  </span>
+                  <span className="flex items-center gap-1 text-[10px] text-gray-500">
+                    <span className="w-4 h-px inline-block" style={{ background: '#3b82f6' }} /> Hacim (ton)
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
 
           {weightData && weightData.length > 0 ? (
             <div className="card p-4">

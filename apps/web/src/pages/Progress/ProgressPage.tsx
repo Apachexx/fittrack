@@ -215,116 +215,98 @@ export default function ProgressPage() {
   })();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-3xl font-bold text-white">İlerleme</h1>
-        <button onClick={() => setShowAddForm(true)} className="btn-primary">+ Ölçüm Ekle</button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-white">İlerleme</h1>
+        <button onClick={() => setShowAddForm(!showAddForm)} className="btn-primary text-sm py-2">
+          {showAddForm ? 'İptal' : '+ Ölçüm'}
+        </button>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {latestWeight && (
-          <div className="card p-4">
-            <p className="text-xs text-gray-500 mb-1">Son Kilo</p>
-            <p className="text-xl font-bold text-white">{latestWeight} kg</p>
-            {weightChange && (
-              <p className="text-xs mt-1 font-medium"
-                style={{ color: parseFloat(weightChange) > 0 ? '#ef4444' : '#22c55e' }}>
-                {parseFloat(weightChange) > 0 ? '+' : ''}{weightChange} kg
-              </p>
-            )}
-          </div>
-        )}
-        {bmi && bmiInfo && (
-          <div className="card p-4">
-            <p className="text-xs text-gray-500 mb-1">BMI</p>
-            <p className="text-xl font-bold" style={{ color: bmiInfo.color }}>{bmi}</p>
-            <p className="text-xs mt-1" style={{ color: bmiInfo.color }}>{bmiInfo.label}</p>
-          </div>
-        )}
-        {measurements?.[0]?.bodyFat && (
-          <div className="card p-4">
-            <p className="text-xs text-gray-500 mb-1">Yağ Oranı</p>
-            <p className="text-xl font-bold text-white">{measurements[0].bodyFat}%</p>
-          </div>
-        )}
-        {workoutStreak > 0 && (
-          <div className="card p-4">
-            <p className="text-xs text-gray-500 mb-1">Seri</p>
-            <p className="text-xl font-bold text-orange-400">{workoutStreak} 🔥</p>
-            <p className="text-xs text-gray-600 mt-1">gün üst üste</p>
-          </div>
-        )}
-        {!settings.heightCm && (
-          <div className="card p-4 col-span-2 flex items-center gap-3"
-            style={{ border: '1px dashed rgba(249,115,22,0.2)' }}>
-            <div className="flex-1">
-              <p className="text-xs text-gray-400 mb-1">Boy girerek BMI hesapla</p>
+      {/* Summary cards — compact row */}
+      {(latestWeight || bmi || workoutStreak > 0) && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {latestWeight && (
+            <div className="card p-3">
+              <p className="text-xs text-gray-500">Son Kilo</p>
+              <p className="text-lg font-bold text-white mt-0.5">{latestWeight} kg</p>
+              {weightChange && (
+                <p className="text-xs font-medium" style={{ color: parseFloat(weightChange) > 0 ? '#ef4444' : '#22c55e' }}>
+                  {parseFloat(weightChange) > 0 ? '+' : ''}{weightChange} kg
+                </p>
+              )}
+            </div>
+          )}
+          {bmi && bmiInfo && (
+            <div className="card p-3">
+              <p className="text-xs text-gray-500">BMI</p>
+              <p className="text-lg font-bold mt-0.5" style={{ color: bmiInfo.color }}>{bmi}</p>
+              <p className="text-xs" style={{ color: bmiInfo.color }}>{bmiInfo.label}</p>
+            </div>
+          )}
+          {measurements?.[0]?.bodyFat && (
+            <div className="card p-3">
+              <p className="text-xs text-gray-500">Yağ Oranı</p>
+              <p className="text-lg font-bold text-white mt-0.5">{measurements[0].bodyFat}%</p>
+            </div>
+          )}
+          {workoutStreak > 0 && (
+            <div className="card p-3">
+              <p className="text-xs text-gray-500">Seri</p>
+              <p className="text-lg font-bold text-orange-400 mt-0.5">{workoutStreak} 🔥</p>
+              <p className="text-xs text-gray-600">gün üst üste</p>
+            </div>
+          )}
+          {!settings.heightCm && (
+            <div className="card p-3 col-span-2" style={{ border: '1px dashed rgba(249,115,22,0.2)' }}>
+              <p className="text-xs text-gray-400 mb-1.5">Boy girerek BMI hesapla</p>
               <div className="flex gap-2">
-                <input type="number" className="input py-1.5 text-sm" placeholder="175"
+                <input type="number" className="input py-1 text-sm" placeholder="175"
                   value={heightInput} onChange={(e) => setHeightInput(e.target.value)} />
-                <button
-                  onClick={() => { if (heightInput) saveSettings({ heightCm: parseFloat(heightInput) }); }}
-                  className="btn-primary py-1.5 px-3 text-xs shrink-0">Kaydet</button>
+                <button onClick={() => { if (heightInput) saveSettings({ heightCm: parseFloat(heightInput) }); }}
+                  className="btn-primary py-1 px-3 text-xs shrink-0">Kaydet</button>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Add form */}
       {showAddForm && (
-        <div className="card space-y-4">
-          <h3 className="font-semibold text-white">Yeni Ölçüm</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="label">Tarih</label>
-              <input type="date" className="input" value={form.measuredAt}
-                onChange={(e) => setForm({ ...form, measuredAt: e.target.value })} />
-            </div>
-            <div>
-              <label className="label">Kilo (kg)</label>
-              <input type="number" className="input" placeholder="75.5" value={form.weightKg}
-                onChange={(e) => setForm({ ...form, weightKg: e.target.value })} step="0.1" />
-            </div>
-            <div>
-              <label className="label">Yağ Oranı (%)</label>
-              <input type="number" className="input" placeholder="18.5" value={form.bodyFat}
-                onChange={(e) => setForm({ ...form, bodyFat: e.target.value })} step="0.1" />
-            </div>
-            <div>
-              <label className="label">Göğüs (cm)</label>
-              <input type="number" className="input" placeholder="95" value={form.chestCm}
-                onChange={(e) => setForm({ ...form, chestCm: e.target.value })} step="0.5" />
-            </div>
-            <div>
-              <label className="label">Bel (cm)</label>
-              <input type="number" className="input" placeholder="80" value={form.waistCm}
-                onChange={(e) => setForm({ ...form, waistCm: e.target.value })} step="0.5" />
-            </div>
-            <div>
-              <label className="label">Kalça (cm)</label>
-              <input type="number" className="input" placeholder="95" value={form.hipsCm}
-                onChange={(e) => setForm({ ...form, hipsCm: e.target.value })} step="0.5" />
-            </div>
+        <div className="card p-4 space-y-3">
+          <p className="text-sm font-semibold text-white">Yeni Ölçüm</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'Tarih', key: 'measuredAt', type: 'date', placeholder: '' },
+              { label: 'Kilo (kg)', key: 'weightKg', type: 'number', placeholder: '75.5' },
+              { label: 'Yağ (%)', key: 'bodyFat', type: 'number', placeholder: '18' },
+              { label: 'Göğüs (cm)', key: 'chestCm', type: 'number', placeholder: '95' },
+              { label: 'Bel (cm)', key: 'waistCm', type: 'number', placeholder: '80' },
+              { label: 'Kalça (cm)', key: 'hipsCm', type: 'number', placeholder: '95' },
+            ].map(({ label, key, type, placeholder }) => (
+              <div key={key}>
+                <label className="text-xs text-gray-500 mb-1 block">{label}</label>
+                <input type={type} className="input py-1.5 text-sm" placeholder={placeholder}
+                  value={form[key as keyof typeof form]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  step={key !== 'measuredAt' && key !== 'bodyFat' ? '0.5' : '0.1'} />
+              </div>
+            ))}
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => addMeasurementMutation.mutate({
-                measuredAt: form.measuredAt,
-                weightKg: form.weightKg ? parseFloat(form.weightKg) : undefined,
-                bodyFat: form.bodyFat ? parseFloat(form.bodyFat) : undefined,
-                chestCm: form.chestCm ? parseFloat(form.chestCm) : undefined,
-                waistCm: form.waistCm ? parseFloat(form.waistCm) : undefined,
-                hipsCm: form.hipsCm ? parseFloat(form.hipsCm) : undefined,
-              } as Parameters<typeof progressApi.addMeasurement>[0])}
-              disabled={addMeasurementMutation.isPending}
-              className="btn-primary"
-            >
-              {addMeasurementMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
-            </button>
-            <button onClick={() => setShowAddForm(false)} className="btn-secondary">İptal</button>
-          </div>
+          <button
+            onClick={() => addMeasurementMutation.mutate({
+              measuredAt: form.measuredAt,
+              weightKg: form.weightKg ? parseFloat(form.weightKg) : undefined,
+              bodyFat: form.bodyFat ? parseFloat(form.bodyFat) : undefined,
+              chestCm: form.chestCm ? parseFloat(form.chestCm) : undefined,
+              waistCm: form.waistCm ? parseFloat(form.waistCm) : undefined,
+              hipsCm: form.hipsCm ? parseFloat(form.hipsCm) : undefined,
+            } as Parameters<typeof progressApi.addMeasurement>[0])}
+            disabled={addMeasurementMutation.isPending}
+            className="btn-primary w-full text-sm"
+          >
+            {addMeasurementMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+          </button>
         </div>
       )}
 
@@ -349,12 +331,12 @@ export default function ProgressPage() {
 
       {/* Body Tab */}
       {activeTab === 'body' && (
-        <div className="space-y-4">
-          {/* Habit Calendar */}
+        <div className="space-y-3">
+          {/* Calendar + weekly side by side on desktop */}
           {workoutDates && workoutDates.length > 0 && (
-            <div className="card p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-white">Antrenman Takvimi</h3>
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-white">Antrenman Takvimi</h3>
                 <span className="text-xs text-gray-500">{workoutDates.length} antrenman</span>
               </div>
               <HabitCalendar workoutDates={workoutDates} />
@@ -362,66 +344,66 @@ export default function ProgressPage() {
           )}
 
           {weeklyData && weeklyData.length > 0 && (
-            <div className="card">
-              <h3 className="font-semibold text-white mb-4">Haftalık Antrenman Sayısı</h3>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={weeklyData}>
+            <div className="card p-4">
+              <h3 className="text-sm font-semibold text-white mb-3">Haftalık Antrenman</h3>
+              <ResponsiveContainer width="100%" height={130}>
+                <BarChart data={weeklyData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="week" stroke="#4b5563" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                  <YAxis stroke="#4b5563" tick={{ fontSize: 11, fill: '#6b7280' }} allowDecimals={false} />
-                  <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v} antrenman`, 'Hafta']} />
+                  <XAxis dataKey="week" stroke="#4b5563" tick={{ fontSize: 10, fill: '#6b7280' }} />
+                  <YAxis stroke="#4b5563" tick={{ fontSize: 10, fill: '#6b7280' }} allowDecimals={false} width={30} />
+                  <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v} antrenman`, '']} />
                   <ReferenceLine y={settings.workoutsPerWeekGoal} stroke="rgba(249,115,22,0.4)" strokeDasharray="4 4" />
-                  <Bar dataKey="antrenman" fill="#f97316" radius={[4, 4, 0, 0]} opacity={0.85} />
+                  <Bar dataKey="antrenman" fill="#f97316" radius={[3, 3, 0, 0]} opacity={0.85} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
 
           {weightData && weightData.length > 0 ? (
-            <div className="card">
-              <h3 className="font-semibold text-white mb-4">Kilo Değişimi</h3>
-              <ResponsiveContainer width="100%" height={240}>
-                <LineChart data={weightData}>
+            <div className="card p-4">
+              <h3 className="text-sm font-semibold text-white mb-3">Kilo Değişimi</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={weightData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="date" stroke="#4b5563" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                  <YAxis stroke="#4b5563" tick={{ fontSize: 11, fill: '#6b7280' }} domain={['auto', 'auto']} />
+                  <XAxis dataKey="date" stroke="#4b5563" tick={{ fontSize: 10, fill: '#6b7280' }} />
+                  <YAxis stroke="#4b5563" tick={{ fontSize: 10, fill: '#6b7280' }} domain={['auto', 'auto']} width={38} />
                   <Tooltip {...tooltipStyle} formatter={(v: number) => [`${v} kg`, 'Kilo']} />
-                  <Line type="monotone" dataKey="weight" stroke="#f97316" strokeWidth={2.5}
-                    dot={{ r: 4, fill: '#f97316', strokeWidth: 0 }}
-                    activeDot={{ r: 6, fill: '#f97316', strokeWidth: 2, stroke: '#fed7aa' }} />
+                  <Line type="monotone" dataKey="weight" stroke="#f97316" strokeWidth={2}
+                    dot={{ r: 3, fill: '#f97316', strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: '#f97316', strokeWidth: 2, stroke: '#fed7aa' }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="card text-center py-12 text-gray-500">
-              <p className="text-3xl mb-2">⚖️</p>
+            <div className="card text-center py-8 text-gray-500 text-sm">
+              <p className="text-2xl mb-2">⚖️</p>
               Henüz kilo ölçümü yok. "Ölçüm Ekle" ile başla.
             </div>
           )}
 
           {measurements && measurements.length > 0 && (
-            <div className="card overflow-hidden">
-              <h3 className="font-semibold text-white mb-4">Son Ölçümler</h3>
+            <div className="card p-4 overflow-hidden">
+              <h3 className="text-sm font-semibold text-white mb-3">Son Ölçümler</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-800">
                       {['Tarih', 'Kilo', 'Yağ %', 'Göğüs', 'Bel', 'Kalça'].map((h) => (
-                        <th key={h} className="text-left pb-3 pr-4 text-xs text-gray-500 font-medium">{h}</th>
+                        <th key={h} className="text-left pb-2 pr-3 text-xs text-gray-600 font-medium">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {measurements.slice(0, 10).map((m, i) => (
-                      <tr key={i} className="border-t border-gray-800/60 hover:bg-white/[0.02]">
-                        <td className="py-2.5 pr-4 text-gray-300">
-                          {format(new Date(m.measuredAt), 'd MMM yyyy', { locale: tr })}
+                    {measurements.slice(0, 6).map((m, i) => (
+                      <tr key={i} className="border-t border-gray-800/40">
+                        <td className="py-2 pr-3 text-xs text-gray-400">
+                          {format(new Date(m.measuredAt), 'd MMM', { locale: tr })}
                         </td>
-                        <td className="py-2.5 pr-4 font-semibold text-white">{m.weightKg ? `${m.weightKg} kg` : '—'}</td>
-                        <td className="py-2.5 pr-4 text-gray-300">{m.bodyFat ? `${m.bodyFat}%` : '—'}</td>
-                        <td className="py-2.5 pr-4 text-gray-400">{(m as { chestCm?: number }).chestCm ? `${(m as { chestCm: number }).chestCm} cm` : '—'}</td>
-                        <td className="py-2.5 pr-4 text-gray-400">{(m as { waistCm?: number }).waistCm ? `${(m as { waistCm: number }).waistCm} cm` : '—'}</td>
-                        <td className="py-2.5 text-gray-400">{(m as { hipsCm?: number }).hipsCm ? `${(m as { hipsCm: number }).hipsCm} cm` : '—'}</td>
+                        <td className="py-2 pr-3 text-xs font-semibold text-white">{m.weightKg ? `${m.weightKg}kg` : '—'}</td>
+                        <td className="py-2 pr-3 text-xs text-gray-400">{m.bodyFat ? `${m.bodyFat}%` : '—'}</td>
+                        <td className="py-2 pr-3 text-xs text-gray-500">{(m as { chestCm?: number }).chestCm ? `${(m as { chestCm: number }).chestCm}` : '—'}</td>
+                        <td className="py-2 pr-3 text-xs text-gray-500">{(m as { waistCm?: number }).waistCm ? `${(m as { waistCm: number }).waistCm}` : '—'}</td>
+                        <td className="py-2 text-xs text-gray-500">{(m as { hipsCm?: number }).hipsCm ? `${(m as { hipsCm: number }).hipsCm}` : '—'}</td>
                       </tr>
                     ))}
                   </tbody>

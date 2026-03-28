@@ -106,8 +106,10 @@ export default function SettingsPage() {
     const minCal = gender === 'male' ? 1500 : 1200;
     const safeDailyCalories = Math.max(dailyCalories, minCal);
 
-    // Protein: ISSN g/kg önerisi — hedef kiloya göre
-    const protein = Math.round(PROTEIN_PER_KG[calcGoal] * target);
+    // Protein: ISSN aralığı — 1.6g/kg (min) ile 2.2g/kg (max) arası
+    const proteinMin = Math.round(1.6 * target);
+    const proteinMax = Math.round(2.2 * target);
+    const protein = proteinMax; // uygulama için üst değer kullanılır
     // Yağ: minimum 0.8g/kg hormon sağlığı için — hedef kiloya göre
     const fat = Math.round(Math.max(FAT_MIN_PER_KG * target, safeDailyCalories * 0.20 / 9));
     // Karbonhidrat: kalan kaloriyi doldurur
@@ -122,7 +124,7 @@ export default function SettingsPage() {
       daysToGoal = Math.round(Math.abs(diff) * 7700 / caloricDelta);
     }
 
-    return { tdee, dailyCalories: safeDailyCalories, protein, carbs, fat, daysToGoal, goalColor: goalDef.color };
+    return { tdee, dailyCalories: safeDailyCalories, protein, proteinMin, proteinMax, carbs, fat, daysToGoal, goalColor: goalDef.color };
   })();
 
   const bmi =
@@ -292,8 +294,8 @@ export default function SettingsPage() {
               <div className="rounded-xl p-3 text-center"
                 style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.15)' }}>
                 <p className="text-xs text-gray-500 mb-1">Protein</p>
-                <p className="text-xl font-bold text-blue-400">{calcResult.protein}g</p>
-                <p className="text-xs text-gray-600 mt-0.5">{PROTEIN_PER_KG[calcGoal]}g/kg</p>
+                <p className="text-lg font-bold text-blue-400">{calcResult.proteinMin}–{calcResult.proteinMax}g</p>
+                <p className="text-xs text-gray-600 mt-0.5">1.6–2.2g/kg</p>
               </div>
               <div className="rounded-xl p-3 text-center"
                 style={{ background: 'rgba(250,204,21,0.08)', border: '1px solid rgba(250,204,21,0.15)' }}>

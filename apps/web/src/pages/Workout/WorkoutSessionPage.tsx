@@ -60,7 +60,11 @@ export default function WorkoutSessionPage() {
   const queryClient = useQueryClient();
   const restTimerRef = useRef<RestTimerRef>(null);
 
-  const saved = loadSession();
+  // Compute once at mount — if sets existed in localStorage, this is a program workout
+  const [{ saved, fromProgram }] = useState(() => {
+    const s = loadSession();
+    return { saved: s, fromProgram: (s?.sets?.length ?? 0) > 0 };
+  });
   const [name, setName] = useState(saved?.name ?? 'Yeni Antrenman');
   const [editingName, setEditingName] = useState(false);
   const [sets, dispatch] = useReducer(reducer, saved?.sets ?? []);
@@ -225,7 +229,7 @@ export default function WorkoutSessionPage() {
               onClick={() => {
                 if (confirm('Antrenmanı sıfırlamak istediğinize emin misiniz?')) {
                   clearSession();
-                  window.location.reload();
+                  navigate('/workouts/start');
                 }
               }}
               className="btn-secondary text-sm px-3 py-2"
@@ -263,8 +267,8 @@ export default function WorkoutSessionPage() {
         {/* Left: exercise picker + set log */}
         <div className="lg:col-span-2 space-y-4">
 
-          {/* Exercise picker */}
-          <div className="card p-5">
+          {/* Exercise picker — sadece boş antrenman için */}
+          {!fromProgram && <div className="card p-5">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Egzersiz Seç</p>
 
             <div className="relative mb-3">
@@ -335,7 +339,7 @@ export default function WorkoutSessionPage() {
                 )}
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Set log */}
           {exerciseOrder.length === 0 ? (

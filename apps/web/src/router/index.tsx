@@ -5,6 +5,7 @@ import LoginPage from '@/pages/Auth/LoginPage';
 import RegisterPage from '@/pages/Auth/RegisterPage';
 import DashboardPage from '@/pages/Dashboard/DashboardPage';
 import WorkoutListPage from '@/pages/Workout/WorkoutListPage';
+import WorkoutStartPage from '@/pages/Workout/WorkoutStartPage';
 import WorkoutSessionPage from '@/pages/Workout/WorkoutSessionPage';
 import WorkoutDetailPage from '@/pages/Workout/WorkoutDetailPage';
 import NutritionDashboard from '@/pages/Nutrition/NutritionDashboard';
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <DashboardPage /> },
           { path: '/workouts', element: <WorkoutListPage /> },
+          { path: '/workouts/start', element: <WorkoutStartPage /> },
           { path: '/workouts/new', element: <WorkoutSessionPage /> },
           { path: '/workouts/:id', element: <WorkoutDetailPage /> },
           { path: '/nutrition', element: <NutritionDashboard /> },

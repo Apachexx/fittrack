@@ -62,7 +62,7 @@ export default function WorkoutListPage() {
           <h1 className="text-3xl font-bold text-white">Antrenmanlar</h1>
           <p className="text-gray-500 mt-1 text-sm">{workouts.length} toplam antrenman</p>
         </div>
-        <Link to="/workouts/new" className="btn-primary flex items-center gap-2 shrink-0">
+        <Link to="/workouts/start" className="btn-primary flex items-center gap-2 shrink-0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
             <path d="M12 5v14M5 12h14" strokeLinecap="round" />
           </svg>
@@ -92,7 +92,7 @@ export default function WorkoutListPage() {
           <span className="text-5xl">🏋️</span>
           <p className="mt-4 text-gray-300 font-medium">Henüz antrenman yok</p>
           <p className="text-gray-500 text-sm mt-1">İlk antrenmana başlamak için butona tıkla</p>
-          <Link to="/workouts/new" className="btn-primary mt-6 inline-block">Antrenman Başlat</Link>
+          <Link to="/workouts/start" className="btn-primary mt-6 inline-block">Antrenman Başlat</Link>
         </div>
       ) : (
         <>

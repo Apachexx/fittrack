@@ -58,7 +58,7 @@ app.use('/api/settings', settingsRoutes);
 
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), v: '6484636' });
 });
 
 // Hata işleyici

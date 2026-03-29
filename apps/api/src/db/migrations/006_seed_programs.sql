@@ -1,4 +1,11 @@
 DO $$
+BEGIN
+  IF (SELECT COUNT(*) FROM programs WHERE created_by IS NULL) > 0 THEN
+    RETURN;
+  END IF;
+END $$;
+
+DO $$
 DECLARE
   ex_bench UUID := 'f8ccec15-9474-46ec-ac38-8f9d4546db69';
   ex_incline_bench UUID := '5cfba19f-74af-4c74-948e-f7fc9db396f7';

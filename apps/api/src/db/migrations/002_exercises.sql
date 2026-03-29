@@ -47,11 +47,11 @@ INSERT INTO exercises (id, name, muscle_group, equipment, is_custom) VALUES
   ('965b9ae2-5290-4201-9214-debcb9bd69c4', 'Overhead Rope Extension', 'arms', 'cables', false),
   ('04994002-7683-44b4-983c-21d3e20838bd', 'Skull Crusher', 'arms', 'barbell', false),
   ('03c1d4dc-b4f7-4d5c-af59-59d7ef847c20', 'Plank', 'core', 'bodyweight', false),
-  (gen_random_uuid(), 'Push-up', 'chest', 'bodyweight', false),
-  (gen_random_uuid(), 'Front Raise', 'shoulders', 'dumbbell', false),
-  (gen_random_uuid(), 'Crunch', 'core', 'bodyweight', false),
-  (gen_random_uuid(), 'Russian Twist', 'core', 'bodyweight', false),
-  (gen_random_uuid(), 'Treadmill', 'cardio', 'machine', false),
-  (gen_random_uuid(), 'Cycling', 'cardio', 'machine', false),
-  (gen_random_uuid(), 'Jump Rope', 'cardio', 'other', false)
+  ('d1000001-0000-0000-0000-000000000001', 'Push-up', 'chest', 'bodyweight', false),
+  ('d1000002-0000-0000-0000-000000000001', 'Front Raise', 'shoulders', 'dumbbell', false),
+  ('d1000003-0000-0000-0000-000000000001', 'Crunch', 'core', 'bodyweight', false),
+  ('d1000004-0000-0000-0000-000000000001', 'Russian Twist', 'core', 'bodyweight', false),
+  ('d1000005-0000-0000-0000-000000000001', 'Treadmill', 'cardio', 'machine', false),
+  ('d1000006-0000-0000-0000-000000000001', 'Cycling', 'cardio', 'machine', false),
+  ('d1000007-0000-0000-0000-000000000001', 'Jump Rope', 'cardio', 'other', false)
 ON CONFLICT (id) DO NOTHING;

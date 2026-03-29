@@ -8,16 +8,10 @@ import { router } from '@/router';
 import { registerSW } from 'virtual:pwa-register';
 import './index.css';
 
-// Auto-reload when new SW activates so stale assets are never served
-const updateSW = registerSW({
-  onNeedRefresh() {
-    updateSW(true); // true = reload page after SW update
-  },
-  onOfflineReady() { /* PWA ready for offline */ },
-  immediate: true,
-});
+// With autoUpdate + skipWaiting + clientsClaim, the new SW activates
+// immediately. The controllerchange fires and reloads the page.
+registerSW({ immediate: true });
 
-// Fallback: reload on SW controller change (skipWaiting + clientsClaim flow)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     window.location.reload();
@@ -27,7 +21,7 @@ if ('serviceWorker' in navigator) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 dakika
+      staleTime: 1000 * 60 * 5,
       retry: 1,
     },
   },

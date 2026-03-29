@@ -8,6 +8,8 @@ export interface ChatMessage {
   userInitials: string;
   content: string;
   isDeleted: boolean;
+  isMod: boolean;
+  isAdmin: boolean;
   createdAt: string;
 }
 
@@ -55,13 +57,39 @@ export async function filterContent(content: string): Promise<string> {
   return result;
 }
 
-/* ─────────────── admin ─── */
+/* ─────────────── admin / mod ─── */
 export async function isAdmin(userId: string): Promise<boolean> {
   const rows = await query<{ is_admin: boolean }>(
     'SELECT is_admin FROM users WHERE id = $1',
     [userId]
   );
   return rows[0]?.is_admin === true;
+}
+
+export async function isModerator(userId: string): Promise<boolean> {
+  const rows = await query<{ is_moderator: boolean; is_admin: boolean }>(
+    'SELECT is_moderator, is_admin FROM users WHERE id = $1',
+    [userId]
+  );
+  return rows[0]?.is_admin === true || rows[0]?.is_moderator === true;
+}
+
+export async function setModerator(targetId: string, value: boolean) {
+  await query('UPDATE users SET is_moderator = $2 WHERE id = $1', [targetId, value]);
+}
+
+export async function getModerators() {
+  return query<{ id: string; name: string; is_admin: boolean; is_moderator: boolean }>(
+    'SELECT id, name, is_admin, is_moderator FROM users WHERE is_moderator = TRUE OR is_admin = TRUE ORDER BY name',
+    []
+  );
+}
+
+export async function clearChat(deletedBy: string) {
+  await query(
+    'UPDATE chat_messages SET is_deleted = TRUE, deleted_by = $1, cleared_at = NOW() WHERE is_deleted = FALSE',
+    [deletedBy]
+  );
 }
 
 /* ─────────────── ban ─── */
@@ -116,10 +144,12 @@ export async function getBans() {
 export async function getMessages(limit = 60): Promise<ChatMessage[]> {
   const rows = await query<{
     id: string; user_id: string | null; name: string;
-    content: string; is_deleted: boolean; created_at: string;
+    content: string; is_deleted: boolean; is_mod: boolean; is_admin: boolean; created_at: string;
   }>(
     `SELECT cm.id, cm.user_id, COALESCE(u.name, 'Silinmiş Kullanıcı') AS name,
-            cm.content, cm.is_deleted, cm.created_at
+            cm.content, cm.is_deleted, cm.created_at,
+            COALESCE(u.is_moderator, FALSE) AS is_mod,
+            COALESCE(u.is_admin, FALSE) AS is_admin
      FROM chat_messages cm
      LEFT JOIN users u ON u.id = cm.user_id
      WHERE cm.is_deleted = FALSE
@@ -130,7 +160,7 @@ export async function getMessages(limit = 60): Promise<ChatMessage[]> {
   return rows.reverse().map(toMsg);
 }
 
-function toMsg(r: { id: string; user_id: string | null; name: string; content: string; is_deleted: boolean; created_at: string }): ChatMessage {
+function toMsg(r: { id: string; user_id: string | null; name: string; content: string; is_deleted: boolean; is_mod?: boolean; is_admin?: boolean; created_at: string }): ChatMessage {
   const name = r.name || 'Kullanıcı';
   return {
     id: r.id,
@@ -139,6 +169,8 @@ function toMsg(r: { id: string; user_id: string | null; name: string; content: s
     userInitials: name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase(),
     content: r.content,
     isDeleted: r.is_deleted,
+    isMod: r.is_mod ?? false,
+    isAdmin: r.is_admin ?? false,
     createdAt: r.created_at,
   };
 }
@@ -146,16 +178,26 @@ function toMsg(r: { id: string; user_id: string | null; name: string; content: s
 export async function createMessage(userId: string, content: string): Promise<ChatMessage> {
   const rows = await query<{
     id: string; user_id: string; name: string;
-    content: string; is_deleted: boolean; created_at: string;
+    content: string; is_deleted: boolean; is_mod: boolean; is_admin: boolean; created_at: string;
   }>(
     `INSERT INTO chat_messages (user_id, content)
      VALUES ($1, $2)
      RETURNING id, user_id,
        (SELECT name FROM users WHERE id = $1) AS name,
-       content, is_deleted, created_at`,
+       content, is_deleted, created_at,
+       (SELECT is_moderator FROM users WHERE id = $1) AS is_mod,
+       (SELECT is_admin FROM users WHERE id = $1) AS is_admin`,
     [userId, content]
   );
   return toMsg(rows[0]);
+}
+
+export async function deleteOwnMessage(messageId: string, userId: string) {
+  const result = await query<{ id: string }>(
+    'UPDATE chat_messages SET is_deleted = TRUE, deleted_by = $2 WHERE id = $1 AND user_id = $2 RETURNING id',
+    [messageId, userId]
+  );
+  return result.length > 0;
 }
 
 export async function deleteMessage(messageId: string, deletedBy: string) {

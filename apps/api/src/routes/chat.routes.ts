@@ -4,6 +4,7 @@ import {
   getMessages, getFriends, getPendingRequests, getDMs, getUnreadCounts,
   searchUsers, getMe,
   getBans, unban, getBannedWords, addBannedWord, removeBannedWord,
+  getModerators,
 } from '../controllers/chat.controller';
 
 const router = Router();
@@ -18,6 +19,7 @@ router.get('/users', searchUsers);
 router.get('/me', getMe);
 
 // Admin
+router.get('/admin/mods', getModerators);
 router.get('/admin/bans', getBans);
 router.delete('/admin/bans/:id', unban);
 router.get('/admin/words', getBannedWords);

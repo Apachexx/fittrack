@@ -7,8 +7,9 @@ export const chatApi = {
   getDMs: (userId: string) => api.get(`/chat/dm/${userId}`).then((r) => r.data),
   getUnread: () => api.get('/chat/unread').then((r) => r.data),
   searchUsers: (q: string) => api.get('/chat/users', { params: { q } }).then((r) => r.data),
-  getMe: () => api.get('/chat/me').then((r) => r.data as { isAdmin: boolean }),
+  getMe: () => api.get('/chat/me').then((r) => r.data as { isAdmin: boolean; isModerator: boolean }),
   // Admin
+  getModerators: () => api.get('/chat/admin/mods').then((r) => r.data),
   getBans: () => api.get('/chat/admin/bans').then((r) => r.data),
   unban: (id: string) => api.delete(`/chat/admin/bans/${id}`),
   getBannedWords: () => api.get('/chat/admin/words').then((r) => r.data),

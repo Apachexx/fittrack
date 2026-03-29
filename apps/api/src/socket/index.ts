@@ -112,32 +112,64 @@ export function attachSocketServer(httpServer: http.Server) {
       catch (e) { console.error('friend:reject', e); }
     });
 
-    /* ── Admin ── */
+    /* ── Kendi mesajını sil ── */
+    socket.on('msg:delete_own', async ({ messageId }: { messageId: string }) => {
+      try {
+        const ok = await chat.deleteOwnMessage(messageId, userId);
+        if (ok) io.to('public').emit('chat:deleted', { messageId });
+      } catch (e) { console.error('msg:delete_own', e); }
+    });
+
+    /* ── Mod/Admin: mesaj sil ── */
     socket.on('admin:delete_msg', async ({ messageId }: { messageId: string }) => {
       try {
-        if (!(await chat.isAdmin(userId))) return;
+        if (!(await chat.isModerator(userId))) return;
         await chat.deleteMessage(messageId, userId);
         io.to('public').emit('chat:deleted', { messageId });
       } catch (e) { console.error('admin:delete_msg', e); }
     });
 
+    /* ── Mod/Admin: ban ── */
     socket.on('admin:ban', async ({ targetId, reason, durationMinutes }: {
       targetId: string; reason?: string; durationMinutes?: number;
     }) => {
       try {
-        if (!(await chat.isAdmin(userId))) return;
+        const callerIsAdmin = await chat.isAdmin(userId);
+        const callerIsMod = await chat.isModerator(userId);
+        if (!callerIsMod) return;
+        // Mod sadece süreli ban yapabilir
+        if (!callerIsAdmin && !durationMinutes) return;
         const ban = await chat.banUser(targetId, userId, reason, durationMinutes);
         io.emit('user:banned', { userId: targetId, ban });
-        emitToUser(targetId, 'error', { message: `Hesabınız${durationMinutes ? ` ${durationMinutes} dakika` : ''} askıya alındı${reason ? `: ${reason}` : '.'}` });
+        const msg = `Hesabınız${durationMinutes ? ` ${durationMinutes} dakika` : ''} askıya alındı${reason ? `: ${reason}` : '.'}`;
+        emitToUser(targetId, 'error', { message: msg });
       } catch (e) { console.error('admin:ban', e); }
     });
 
     socket.on('admin:unban', async ({ banId }: { banId: string }) => {
       try {
-        if (!(await chat.isAdmin(userId))) return;
+        if (!(await chat.isModerator(userId))) return;
         await chat.unbanUser(banId);
         socket.emit('admin:unbanned', { banId });
       } catch (e) { console.error('admin:unban', e); }
+    });
+
+    /* ── Admin only: sohbeti temizle ── */
+    socket.on('admin:clear_chat', async () => {
+      try {
+        if (!(await chat.isAdmin(userId))) return;
+        await chat.clearChat(userId);
+        io.to('public').emit('chat:cleared');
+      } catch (e) { console.error('admin:clear_chat', e); }
+    });
+
+    /* ── Admin only: moderatör yap / kaldır ── */
+    socket.on('admin:set_mod', async ({ targetId, value }: { targetId: string; value: boolean }) => {
+      try {
+        if (!(await chat.isAdmin(userId))) return;
+        await chat.setModerator(targetId, value);
+        io.emit('user:mod_updated', { userId: targetId, isMod: value });
+      } catch (e) { console.error('admin:set_mod', e); }
     });
 
     socket.on('disconnect', () => {

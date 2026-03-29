@@ -49,8 +49,19 @@ export async function searchUsers(req: AuthRequest, res: Response): Promise<void
 
 export async function getMe(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const admin = await chatService.isAdmin(req.user!.id);
-    res.json({ isAdmin: admin });
+    const [admin, mod] = await Promise.all([
+      chatService.isAdmin(req.user!.id),
+      chatService.isModerator(req.user!.id),
+    ]);
+    res.json({ isAdmin: admin, isModerator: mod });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Alınamadı' }); }
+}
+
+export async function getModerators(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    if (!(await chatService.isAdmin(req.user!.id))) { res.status(403).json({ error: 'Yetkisiz' }); return; }
+    const mods = await chatService.getModerators();
+    res.json(mods);
   } catch (e) { console.error(e); res.status(500).json({ error: 'Alınamadı' }); }
 }
 

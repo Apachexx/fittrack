@@ -58,7 +58,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           socket.io.opts.reconnection = true;
           socket.connect();
         } else {
-          localStorage.clear();
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
           window.location.href = '/login';
         }
       }

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -11,9 +12,15 @@ import workoutRoutes from './routes/workout.routes';
 import nutritionRoutes from './routes/nutrition.routes';
 import programRoutes from './routes/program.routes';
 import progressRoutes from './routes/progress.routes';
+import chatRoutes from './routes/chat.routes';
 import { errorHandler } from './middleware/error';
+import { attachSocketServer } from './socket';
 
 const app = express();
+const httpServer = http.createServer(app);
+
+// Socket.io
+attachSocketServer(httpServer);
 
 // Railway/proxy desteği
 app.set('trust proxy', 1);
@@ -27,7 +34,7 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 dakika
+  windowMs: 15 * 60 * 1000,
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
@@ -44,6 +51,7 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/nutrition', nutritionRoutes);
 app.use('/api/programs', programRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
@@ -63,7 +71,7 @@ if (fs.existsSync(webDistPath)) {
 }
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`🚀 FitTrack API çalışıyor: http://localhost:${PORT}`);
 });
 

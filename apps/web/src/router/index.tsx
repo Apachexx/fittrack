@@ -15,6 +15,7 @@ import ProgramDetailPage from '@/pages/Programs/ProgramDetailPage';
 import ProgramCreatePage from '@/pages/Programs/ProgramCreatePage';
 import CommunityProgramsPage from '@/pages/Programs/CommunityProgramsPage';
 import SettingsPage from '@/pages/Settings/SettingsPage';
+import ChatPage from '@/pages/Chat/ChatPage';
 
 function ProtectedRoute() {
   const { isAuthenticated } = useAuth();
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
           { path: '/programs/community', element: <CommunityProgramsPage /> },
           { path: '/programs/:id', element: <ProgramDetailPage /> },
           { path: '/settings', element: <SettingsPage /> },
+          { path: '/chat', element: <ChatPage /> },
         ],
       },
     ],

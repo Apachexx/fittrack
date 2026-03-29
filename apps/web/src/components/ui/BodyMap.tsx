@@ -1,184 +1,58 @@
 interface MuscleTarget { primary: string[]; secondary: string[] }
 
 const EXERCISE_MUSCLES: Record<string, MuscleTarget> = {
-  'Bench Press': {
-    primary: ['pec-lower-l', 'pec-lower-r'],
-    secondary: ['pec-upper-l', 'pec-upper-r', 'delt-ant-l', 'delt-ant-r', 'tricep-lat-l', 'tricep-lat-r', 'tricep-long-l', 'tricep-long-r'],
-  },
-  'Incline Bench Press': {
-    primary: ['pec-upper-l', 'pec-upper-r'],
-    secondary: ['pec-lower-l', 'pec-lower-r', 'delt-ant-l', 'delt-ant-r', 'tricep-lat-l', 'tricep-lat-r'],
-  },
-  'Smith Machine Low Incline Press': {
-    primary: ['pec-upper-l', 'pec-upper-r', 'pec-lower-l', 'pec-lower-r'],
-    secondary: ['delt-ant-l', 'delt-ant-r', 'tricep-lat-l', 'tricep-lat-r'],
-  },
-  'Chest Fly Machine': {
-    primary: ['pec-lower-l', 'pec-lower-r', 'pec-upper-l', 'pec-upper-r'],
-    secondary: ['delt-ant-l', 'delt-ant-r'],
-  },
-  'Dumbbell Fly': {
-    primary: ['pec-lower-l', 'pec-lower-r'],
-    secondary: ['pec-upper-l', 'pec-upper-r', 'delt-ant-l', 'delt-ant-r'],
-  },
-  'Cable Crossover': {
-    primary: ['pec-lower-l', 'pec-lower-r'],
-    secondary: ['pec-upper-l', 'pec-upper-r', 'delt-ant-l', 'delt-ant-r'],
-  },
-  'Push-up': {
-    primary: ['pec-lower-l', 'pec-lower-r'],
-    secondary: ['delt-ant-l', 'delt-ant-r', 'tricep-lat-l', 'tricep-lat-r'],
-  },
-  'Pull-up': {
-    primary: ['lat-l', 'lat-r'],
-    secondary: ['bicep-l', 'bicep-r', 'brachialis-l', 'brachialis-r', 'rhomboid', 'delt-post-l', 'delt-post-r', 'trap-mid'],
-  },
-  'Barbell Row': {
-    primary: ['lat-l', 'lat-r', 'rhomboid'],
-    secondary: ['trap-mid', 'trap-upper-l', 'trap-upper-r', 'delt-post-l', 'delt-post-r', 'bicep-l', 'bicep-r', 'erector-l', 'erector-r'],
-  },
-  'Lat Pulldown': {
-    primary: ['lat-l', 'lat-r'],
-    secondary: ['bicep-l', 'bicep-r', 'brachialis-l', 'brachialis-r', 'rhomboid', 'trap-mid'],
-  },
-  'Seated Cable Row': {
-    primary: ['rhomboid', 'trap-mid'],
-    secondary: ['lat-l', 'lat-r', 'bicep-l', 'bicep-r', 'delt-post-l', 'delt-post-r'],
-  },
-  'Cable Row': {
-    primary: ['rhomboid', 'trap-mid', 'lat-l', 'lat-r'],
-    secondary: ['bicep-l', 'bicep-r', 'delt-post-l', 'delt-post-r'],
-  },
-  'Cable Rear Delt Fly': {
-    primary: ['delt-post-l', 'delt-post-r'],
-    secondary: ['rhomboid', 'trap-mid', 'trap-upper-l', 'trap-upper-r'],
-  },
-  'Plate Loaded Wide Grip Row': {
-    primary: ['lat-l', 'lat-r', 'rhomboid'],
-    secondary: ['trap-mid', 'trap-upper-l', 'trap-upper-r', 'delt-post-l', 'delt-post-r', 'bicep-l', 'bicep-r'],
-  },
-  'Deadlift': {
-    primary: ['erector-l', 'erector-r', 'glute-max-l', 'glute-max-r', 'hamstring-bf-l', 'hamstring-bf-r'],
-    secondary: ['trap-upper-l', 'trap-upper-r', 'quad-vl-l', 'quad-vl-r', 'quad-rf-l', 'quad-rf-r', 'forearm-l', 'forearm-r', 'forearm-back-l', 'forearm-back-r'],
-  },
-  'Squat': {
-    primary: ['quad-rf-l', 'quad-rf-r', 'quad-vl-l', 'quad-vl-r', 'quad-vm-l', 'quad-vm-r', 'glute-max-l', 'glute-max-r'],
-    secondary: ['hamstring-bf-l', 'hamstring-bf-r', 'erector-l', 'erector-r', 'adductor-l', 'adductor-r'],
-  },
-  'Smith Machine Squat': {
-    primary: ['quad-rf-l', 'quad-rf-r', 'quad-vl-l', 'quad-vl-r', 'quad-vm-l', 'quad-vm-r'],
-    secondary: ['glute-max-l', 'glute-max-r', 'hamstring-bf-l', 'hamstring-bf-r'],
-  },
-  'Leg Press': {
-    primary: ['quad-rf-l', 'quad-rf-r', 'quad-vl-l', 'quad-vl-r', 'quad-vm-l', 'quad-vm-r'],
-    secondary: ['glute-max-l', 'glute-max-r', 'hamstring-bf-l', 'hamstring-bf-r', 'adductor-l', 'adductor-r'],
-  },
-  'Romanian Deadlift': {
-    primary: ['hamstring-bf-l', 'hamstring-bf-r', 'hamstring-st-l', 'hamstring-st-r', 'glute-max-l', 'glute-max-r'],
-    secondary: ['erector-l', 'erector-r', 'adductor-l', 'adductor-r'],
-  },
-  'Leg Curl': {
-    primary: ['hamstring-bf-l', 'hamstring-bf-r', 'hamstring-st-l', 'hamstring-st-r'],
-    secondary: ['calf-l', 'calf-r'],
-  },
-  'Seated Leg Curl': {
-    primary: ['hamstring-bf-l', 'hamstring-bf-r', 'hamstring-st-l', 'hamstring-st-r'],
-    secondary: [],
-  },
-  'Leg Extension': {
-    primary: ['quad-rf-l', 'quad-rf-r', 'quad-vl-l', 'quad-vl-r', 'quad-vm-l', 'quad-vm-r'],
-    secondary: [],
-  },
-  'Lunge': {
-    primary: ['quad-rf-l', 'quad-rf-r', 'glute-max-l', 'glute-max-r'],
-    secondary: ['quad-vl-l', 'quad-vl-r', 'quad-vm-l', 'quad-vm-r', 'hamstring-bf-l', 'hamstring-bf-r', 'adductor-l', 'adductor-r'],
-  },
-  'Overhead Press': {
-    primary: ['delt-ant-l', 'delt-ant-r', 'delt-mid-l', 'delt-mid-r'],
-    secondary: ['tricep-lat-l', 'tricep-lat-r', 'tricep-long-l', 'tricep-long-r', 'trap-upper-l', 'trap-upper-r'],
-  },
-  'Shoulder Press Machine': {
-    primary: ['delt-ant-l', 'delt-ant-r', 'delt-mid-l', 'delt-mid-r'],
-    secondary: ['tricep-lat-l', 'tricep-lat-r', 'trap-upper-l', 'trap-upper-r'],
-  },
-  'Dumbbell Lateral Raise': {
-    primary: ['delt-mid-l', 'delt-mid-r'],
-    secondary: ['delt-ant-l', 'delt-ant-r', 'trap-upper-l', 'trap-upper-r'],
-  },
-  'Lateral Raise': {
-    primary: ['delt-mid-l', 'delt-mid-r'],
-    secondary: ['delt-ant-l', 'delt-ant-r', 'trap-upper-l', 'trap-upper-r'],
-  },
-  'Front Raise': {
-    primary: ['delt-ant-l', 'delt-ant-r'],
-    secondary: ['delt-mid-l', 'delt-mid-r', 'pec-upper-l', 'pec-upper-r'],
-  },
-  'Face Pull': {
-    primary: ['delt-post-l', 'delt-post-r'],
-    secondary: ['rhomboid', 'trap-mid', 'trap-upper-l', 'trap-upper-r'],
-  },
-  'Bicep Curl': {
-    primary: ['bicep-l', 'bicep-r'],
-    secondary: ['brachialis-l', 'brachialis-r', 'forearm-l', 'forearm-r'],
-  },
-  'Hammer Curl': {
-    primary: ['brachialis-l', 'brachialis-r', 'forearm-l', 'forearm-r'],
-    secondary: ['bicep-l', 'bicep-r'],
-  },
-  'Cable Curl': {
-    primary: ['bicep-l', 'bicep-r'],
-    secondary: ['brachialis-l', 'brachialis-r', 'forearm-l', 'forearm-r'],
-  },
-  'Incline Dumbbell Curl': {
-    primary: ['bicep-l', 'bicep-r'],
-    secondary: ['brachialis-l', 'brachialis-r'],
-  },
-  'Tricep Pushdown': {
-    primary: ['tricep-lat-l', 'tricep-lat-r'],
-    secondary: ['tricep-long-l', 'tricep-long-r'],
-  },
-  'Overhead Rope Extension': {
-    primary: ['tricep-long-l', 'tricep-long-r'],
-    secondary: ['tricep-lat-l', 'tricep-lat-r'],
-  },
-  'Skull Crusher': {
-    primary: ['tricep-long-l', 'tricep-long-r', 'tricep-lat-l', 'tricep-lat-r'],
-    secondary: [],
-  },
-  'Plank': {
-    primary: ['abs-upper', 'abs-lower'],
-    secondary: ['oblique-l', 'oblique-r', 'erector-l', 'erector-r', 'glute-max-l', 'glute-max-r'],
-  },
-  'Crunch': {
-    primary: ['abs-upper'],
-    secondary: ['abs-lower', 'oblique-l', 'oblique-r'],
-  },
-  'Russian Twist': {
-    primary: ['oblique-l', 'oblique-r'],
-    secondary: ['abs-upper', 'abs-lower'],
-  },
-  'Treadmill': {
-    primary: ['quad-rf-l', 'quad-rf-r', 'hamstring-bf-l', 'hamstring-bf-r', 'calf-l', 'calf-r'],
-    secondary: ['glute-max-l', 'glute-max-r'],
-  },
-  'Cycling': {
-    primary: ['quad-rf-l', 'quad-rf-r', 'quad-vl-l', 'quad-vl-r'],
-    secondary: ['glute-max-l', 'glute-max-r', 'hamstring-bf-l', 'hamstring-bf-r', 'calf-l', 'calf-r'],
-  },
-  'Jump Rope': {
-    primary: ['calf-l', 'calf-r'],
-    secondary: ['quad-rf-l', 'quad-rf-r', 'hamstring-bf-l', 'hamstring-bf-r'],
-  },
+  'Bench Press': { primary: ['pec-l','pec-r'], secondary: ['delt-ant-l','delt-ant-r','tri-l','tri-r'] },
+  'Incline Bench Press': { primary: ['pec-upper-l','pec-upper-r'], secondary: ['pec-l','pec-r','delt-ant-l','delt-ant-r','tri-l','tri-r'] },
+  'Smith Machine Low Incline Press': { primary: ['pec-upper-l','pec-upper-r','pec-l','pec-r'], secondary: ['delt-ant-l','delt-ant-r','tri-l','tri-r'] },
+  'Chest Fly Machine': { primary: ['pec-l','pec-r','pec-upper-l','pec-upper-r'], secondary: ['delt-ant-l','delt-ant-r'] },
+  'Dumbbell Fly': { primary: ['pec-l','pec-r'], secondary: ['pec-upper-l','pec-upper-r','delt-ant-l','delt-ant-r'] },
+  'Cable Crossover': { primary: ['pec-l','pec-r'], secondary: ['pec-upper-l','pec-upper-r','delt-ant-l','delt-ant-r'] },
+  'Push-up': { primary: ['pec-l','pec-r'], secondary: ['delt-ant-l','delt-ant-r','tri-l','tri-r'] },
+  'Pull-up': { primary: ['lat-l','lat-r'], secondary: ['bi-l','bi-r','brachialis-l','brachialis-r','rhomboid','trap-mid','delt-post-l','delt-post-r'] },
+  'Barbell Row': { primary: ['lat-l','lat-r','rhomboid'], secondary: ['trap-upper-l','trap-upper-r','trap-mid','delt-post-l','delt-post-r','bi-l','bi-r','erector-l','erector-r'] },
+  'Lat Pulldown': { primary: ['lat-l','lat-r'], secondary: ['bi-l','bi-r','brachialis-l','brachialis-r','rhomboid','trap-mid'] },
+  'Seated Cable Row': { primary: ['rhomboid','trap-mid'], secondary: ['lat-l','lat-r','bi-l','bi-r','delt-post-l','delt-post-r'] },
+  'Cable Row': { primary: ['rhomboid','trap-mid','lat-l','lat-r'], secondary: ['bi-l','bi-r','delt-post-l','delt-post-r'] },
+  'Cable Rear Delt Fly': { primary: ['delt-post-l','delt-post-r'], secondary: ['rhomboid','trap-mid','trap-upper-l','trap-upper-r'] },
+  'Plate Loaded Wide Grip Row': { primary: ['lat-l','lat-r','rhomboid'], secondary: ['trap-mid','trap-upper-l','trap-upper-r','delt-post-l','delt-post-r','bi-l','bi-r'] },
+  'Deadlift': { primary: ['erector-l','erector-r','glute-l','glute-r','ham-l','ham-r'], secondary: ['trap-upper-l','trap-upper-r','quad-l','quad-r','forearm-l','forearm-r'] },
+  'Squat': { primary: ['quad-l','quad-r','quad-vm-l','quad-vm-r','glute-l','glute-r'], secondary: ['ham-l','ham-r','erector-l','erector-r','adductor-l','adductor-r'] },
+  'Smith Machine Squat': { primary: ['quad-l','quad-r','quad-vm-l','quad-vm-r'], secondary: ['glute-l','glute-r','ham-l','ham-r'] },
+  'Leg Press': { primary: ['quad-l','quad-r','quad-vm-l','quad-vm-r'], secondary: ['glute-l','glute-r','ham-l','ham-r','adductor-l','adductor-r'] },
+  'Romanian Deadlift': { primary: ['ham-l','ham-r','glute-l','glute-r'], secondary: ['erector-l','erector-r','adductor-l','adductor-r'] },
+  'Leg Curl': { primary: ['ham-l','ham-r'], secondary: ['calf-l','calf-r'] },
+  'Seated Leg Curl': { primary: ['ham-l','ham-r'], secondary: [] },
+  'Leg Extension': { primary: ['quad-l','quad-r','quad-vm-l','quad-vm-r'], secondary: [] },
+  'Lunge': { primary: ['quad-l','quad-r','glute-l','glute-r'], secondary: ['quad-vm-l','quad-vm-r','ham-l','ham-r','adductor-l','adductor-r'] },
+  'Overhead Press': { primary: ['delt-ant-l','delt-ant-r','delt-mid-l','delt-mid-r'], secondary: ['tri-l','tri-r','trap-upper-l','trap-upper-r'] },
+  'Shoulder Press Machine': { primary: ['delt-ant-l','delt-ant-r','delt-mid-l','delt-mid-r'], secondary: ['tri-l','tri-r','trap-upper-l','trap-upper-r'] },
+  'Dumbbell Lateral Raise': { primary: ['delt-mid-l','delt-mid-r'], secondary: ['delt-ant-l','delt-ant-r','trap-upper-l','trap-upper-r'] },
+  'Lateral Raise': { primary: ['delt-mid-l','delt-mid-r'], secondary: ['delt-ant-l','delt-ant-r','trap-upper-l','trap-upper-r'] },
+  'Front Raise': { primary: ['delt-ant-l','delt-ant-r'], secondary: ['delt-mid-l','delt-mid-r','pec-upper-l','pec-upper-r'] },
+  'Face Pull': { primary: ['delt-post-l','delt-post-r'], secondary: ['rhomboid','trap-mid','trap-upper-l','trap-upper-r'] },
+  'Bicep Curl': { primary: ['bi-l','bi-r'], secondary: ['brachialis-l','brachialis-r','forearm-l','forearm-r'] },
+  'Hammer Curl': { primary: ['brachialis-l','brachialis-r','forearm-l','forearm-r'], secondary: ['bi-l','bi-r'] },
+  'Cable Curl': { primary: ['bi-l','bi-r'], secondary: ['brachialis-l','brachialis-r','forearm-l','forearm-r'] },
+  'Incline Dumbbell Curl': { primary: ['bi-l','bi-r'], secondary: ['brachialis-l','brachialis-r'] },
+  'Tricep Pushdown': { primary: ['tri-l','tri-r'], secondary: [] },
+  'Overhead Rope Extension': { primary: ['tri-l','tri-r'], secondary: [] },
+  'Skull Crusher': { primary: ['tri-l','tri-r'], secondary: [] },
+  'Plank': { primary: ['abs','oblique-l','oblique-r'], secondary: ['erector-l','erector-r','glute-l','glute-r'] },
+  'Crunch': { primary: ['abs'], secondary: ['oblique-l','oblique-r'] },
+  'Russian Twist': { primary: ['oblique-l','oblique-r'], secondary: ['abs'] },
+  'Treadmill': { primary: ['quad-l','quad-r','ham-l','ham-r','calf-l','calf-r'], secondary: ['glute-l','glute-r'] },
+  'Cycling': { primary: ['quad-l','quad-r'], secondary: ['glute-l','glute-r','ham-l','ham-r','calf-l','calf-r'] },
+  'Jump Rope': { primary: ['calf-l','calf-r'], secondary: ['quad-l','quad-r','ham-l','ham-r'] },
 };
 
 const GROUP_FALLBACK: Record<string, MuscleTarget> = {
-  chest: { primary: ['pec-lower-l', 'pec-lower-r', 'pec-upper-l', 'pec-upper-r'], secondary: ['delt-ant-l', 'delt-ant-r'] },
-  back: { primary: ['lat-l', 'lat-r', 'rhomboid', 'trap-mid'], secondary: ['delt-post-l', 'delt-post-r', 'trap-upper-l', 'trap-upper-r'] },
-  legs: { primary: ['quad-rf-l', 'quad-rf-r', 'quad-vl-l', 'quad-vl-r', 'glute-max-l', 'glute-max-r'], secondary: ['hamstring-bf-l', 'hamstring-bf-r', 'calf-l', 'calf-r'] },
-  shoulders: { primary: ['delt-ant-l', 'delt-ant-r', 'delt-mid-l', 'delt-mid-r'], secondary: ['delt-post-l', 'delt-post-r', 'trap-upper-l', 'trap-upper-r'] },
-  arms: { primary: ['bicep-l', 'bicep-r', 'tricep-long-l', 'tricep-long-r', 'tricep-lat-l', 'tricep-lat-r'], secondary: ['brachialis-l', 'brachialis-r', 'forearm-l', 'forearm-r'] },
-  core: { primary: ['abs-upper', 'abs-lower', 'oblique-l', 'oblique-r'], secondary: ['erector-l', 'erector-r'] },
-  cardio: { primary: ['quad-rf-l', 'quad-rf-r', 'hamstring-bf-l', 'hamstring-bf-r', 'calf-l', 'calf-r'], secondary: ['glute-max-l', 'glute-max-r'] },
+  chest: { primary: ['pec-l','pec-r','pec-upper-l','pec-upper-r'], secondary: ['delt-ant-l','delt-ant-r'] },
+  back: { primary: ['lat-l','lat-r','rhomboid','trap-mid'], secondary: ['delt-post-l','delt-post-r','trap-upper-l','trap-upper-r'] },
+  legs: { primary: ['quad-l','quad-r','glute-l','glute-r'], secondary: ['ham-l','ham-r','calf-l','calf-r'] },
+  shoulders: { primary: ['delt-ant-l','delt-ant-r','delt-mid-l','delt-mid-r'], secondary: ['delt-post-l','delt-post-r','trap-upper-l','trap-upper-r'] },
+  arms: { primary: ['bi-l','bi-r','tri-l','tri-r'], secondary: ['brachialis-l','brachialis-r','forearm-l','forearm-r'] },
+  core: { primary: ['abs','oblique-l','oblique-r'], secondary: ['erector-l','erector-r'] },
+  cardio: { primary: ['quad-l','quad-r','ham-l','ham-r','calf-l','calf-r'], secondary: ['glute-l','glute-r'] },
 };
 
 interface BodyMapProps {
@@ -188,45 +62,34 @@ interface BodyMapProps {
 
 export default function BodyMap({ exerciseName, muscleGroup }: BodyMapProps) {
   const target: MuscleTarget | null =
-    (exerciseName && EXERCISE_MUSCLES[exerciseName])
-      ? EXERCISE_MUSCLES[exerciseName]
-      : (muscleGroup && GROUP_FALLBACK[muscleGroup])
-        ? GROUP_FALLBACK[muscleGroup]
-        : null;
+    (exerciseName && EXERCISE_MUSCLES[exerciseName]) ? EXERCISE_MUSCLES[exerciseName]
+    : (muscleGroup && GROUP_FALLBACK[muscleGroup]) ? GROUP_FALLBACK[muscleGroup]
+    : null;
 
   const primary = new Set(target?.primary ?? []);
   const secondary = new Set(target?.secondary ?? []);
 
-  // inactive muscles are always visible as dark overlay (like anatomy reference image)
-  const f = (id: string): string => {
-    if (primary.has(id)) return '#ef4444';
-    if (secondary.has(id)) return '#f97316';
-    return '#1b2d3e';
-  };
-  const fs = (id: string): string => {
-    if (primary.has(id)) return '#991b1b';
-    if (secondary.has(id)) return '#9a3412';
-    return '#0f1e2b';
-  };
+  const fill = (id: string) => primary.has(id) ? '#ef4444' : secondary.has(id) ? '#f97316' : '#253545';
+  const stroke = (id: string) => primary.has(id) ? '#7f1d1d' : secondary.has(id) ? '#7c2d12' : '#1a2a38';
 
-  const BC = '#0b1520';   // body silhouette fill
-  const DL = '#1a2e3e';   // definition/division line color
-  const sw = '0.6';       // stroke width for muscle outlines
-
-  const M = (id: string, d: string) => (
-    <path key={id} d={d} fill={f(id)} stroke={fs(id)} strokeWidth={sw} strokeLinejoin="round" strokeLinecap="round" />
+  const M = (id: string, d: string, extra?: React.SVGProps<SVGPathElement>) => (
+    <path d={d} fill={fill(id)} stroke={stroke(id)} strokeWidth="0.8" strokeLinejoin="round" strokeLinecap="round" {...extra} />
   );
 
+  // Body color (dark blue-gray)
+  const B = '#1c2d3c';
+  // Skin lines
+  const S = '#131f2a';
+
   const hasTarget = !!target;
-  const label = exerciseName ?? null;
 
   return (
     <div className="flex flex-col items-center gap-2 select-none">
-      {label && (
+      {exerciseName && (
         <div className="flex items-center gap-2 flex-wrap justify-center">
           <span className="text-xs font-semibold px-3 py-1 rounded-full"
             style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
-            {label}
+            {exerciseName}
           </span>
           {hasTarget && secondary.size > 0 && (
             <span className="text-xs px-2 py-0.5 rounded-full"
@@ -237,274 +100,268 @@ export default function BodyMap({ exerciseName, muscleGroup }: BodyMapProps) {
         </div>
       )}
 
-      <svg viewBox="0 0 300 420" className="w-full max-w-[280px]" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 260 440" className="w-full max-w-[260px]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="ms">
+            <feGaussianBlur stdDeviation="1.2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
 
-        {/* ── Labels ── */}
-        <text x="72" y="9" textAnchor="middle" fill="#4a6070" fontSize="7" fontFamily="sans-serif" letterSpacing="1.5" fontWeight="600">ÖN</text>
-        <text x="228" y="9" textAnchor="middle" fill="#4a6070" fontSize="7" fontFamily="sans-serif" letterSpacing="1.5" fontWeight="600">ARKA</text>
-        <line x1="150" y1="12" x2="150" y2="410" stroke="#162230" strokeWidth="1" />
+        {/* Labels */}
+        <text x="65" y="9" textAnchor="middle" fill="#3d5a6e" fontSize="7" fontFamily="sans-serif" letterSpacing="1.5" fontWeight="700">ÖN</text>
+        <text x="195" y="9" textAnchor="middle" fill="#3d5a6e" fontSize="7" fontFamily="sans-serif" letterSpacing="1.5" fontWeight="700">ARKA</text>
+        <line x1="130" y1="12" x2="130" y2="432" stroke="#14202b" strokeWidth="1.5" />
 
-        {/* ══════════════════════════════════════════
-            FRONT SILHOUETTE  (center x = 72)
-            ══════════════════════════════════════════ */}
+        {/* ═══════════════════════════════════════
+            FRONT VIEW  (centered x=65)
+            ═══════════════════════════════════════ */}
 
+        {/* —— Body silhouette —— */}
         {/* Head */}
-        <ellipse cx="72" cy="19" rx="13" ry="15" fill={BC} />
+        <ellipse cx="65" cy="26" rx="14" ry="17" fill={B} />
         {/* Neck */}
-        <path d="M65,33 Q68,30 72,30 Q76,30 79,33 L77,50 L67,50 Z" fill={BC} />
-        {/* Left trap slope neck→shoulder */}
-        <path d="M67,50 Q52,47 28,62 L32,78 Q48,63 69,56 Z" fill={BC} />
-        {/* Right trap slope */}
-        <path d="M77,50 Q92,47 116,62 L112,78 Q96,63 75,56 Z" fill={BC} />
+        <path d="M59,42 Q62,37 65,36 Q68,37 71,42 L70,57 L60,57 Z" fill={B} />
+        {/* Left trapezius slope neck→shoulder */}
+        <path d="M60,57 Q44,53 20,68 L24,82 Q42,67 61,62 Z" fill={B} />
+        {/* Right trapezius slope */}
+        <path d="M70,57 Q86,53 110,68 L106,82 Q88,67 69,62 Z" fill={B} />
         {/* Left deltoid cap */}
-        <path d="M22,64 Q12,70 10,98 Q12,112 24,110 Q34,92 32,78 Z" fill={BC} />
+        <path d="M12,64 Q2,72 2,100 Q4,116 16,114 Q28,94 24,80 Z" fill={B} />
         {/* Right deltoid cap */}
-        <path d="M122,64 Q132,70 134,98 Q132,112 120,110 Q110,92 112,78 Z" fill={BC} />
-        {/* Torso — tapered waist with cubic bezier */}
-        <path d="M32,82 C26,108 26,146 40,162 C38,174 40,184 42,192 L102,192 C104,184 106,174 104,162 C118,146 118,108 112,82 Q72,68 32,82 Z" fill={BC} />
+        <path d="M118,64 Q128,72 128,100 Q126,116 114,114 Q102,94 106,80 Z" fill={B} />
+        {/* Torso — natural hourglass */}
+        <path d="M24,80 C18,108 18,144 34,162 C32,175 34,188 38,196 L92,196 C96,188 98,175 96,162 C112,144 112,108 106,80 Q65,64 24,80 Z" fill={B} />
         {/* Left upper arm */}
-        <path d="M22,64 Q10,72 8,102 Q8,124 16,144 Q24,150 34,146 Q38,124 36,98 Z" fill={BC} />
+        <path d="M12,64 Q0,76 0,106 Q0,128 6,144 Q14,152 26,148 Q34,126 30,98 Z" fill={B} />
         {/* Right upper arm */}
-        <path d="M122,64 Q134,72 136,102 Q136,124 128,144 Q120,150 110,146 Q106,124 108,98 Z" fill={BC} />
+        <path d="M118,64 Q130,76 130,106 Q130,128 124,144 Q116,152 104,148 Q96,126 100,98 Z" fill={B} />
         {/* Left forearm */}
-        <path d="M16,144 Q8,166 10,198 Q18,206 30,202 Q38,174 34,146 Z" fill={BC} />
+        <path d="M6,144 Q0,166 2,198 Q10,206 24,202 Q32,176 26,148 Z" fill={B} />
         {/* Right forearm */}
-        <path d="M128,144 Q136,166 134,198 Q126,206 114,202 Q106,174 110,146 Z" fill={BC} />
-        {/* Left hand */}
-        <ellipse cx="21" cy="212" rx="10" ry="9" fill={BC} />
-        {/* Right hand */}
-        <ellipse cx="123" cy="212" rx="10" ry="9" fill={BC} />
-        {/* Pelvis */}
-        <path d="M40,190 L44,204 Q72,213 100,204 L104,190 Q72,200 40,190 Z" fill={BC} />
-        {/* Left thigh */}
-        <path d="M40,202 Q22,248 24,294 Q34,306 50,300 Q58,256 58,204 Z" fill={BC} />
-        {/* Right thigh */}
-        <path d="M104,202 Q122,248 120,294 Q110,306 94,300 Q86,256 86,204 Z" fill={BC} />
-        {/* Left lower leg */}
-        <path d="M24,294 Q18,324 20,358 Q28,368 46,364 Q52,332 50,300 Z" fill={BC} />
-        {/* Right lower leg */}
-        <path d="M120,294 Q126,324 124,358 Q116,368 98,364 Q92,332 94,300 Z" fill={BC} />
-        {/* Left foot */}
-        <path d="M20,358 Q14,374 22,380 Q34,386 48,382 Q52,372 46,364 Z" fill={BC} />
-        {/* Right foot */}
-        <path d="M124,358 Q130,374 122,380 Q110,386 96,382 Q90,372 98,364 Z" fill={BC} />
-
-        {/* ══════════════════════════════════════════
-            FRONT MUSCLES
-            ══════════════════════════════════════════ */}
-
-        {/* ── Traps (front visible portion, neck slopes) ── */}
-        {M('trap-upper-l', 'M67,50 Q52,47 28,62 L32,78 Q48,63 69,56 Z')}
-        {M('trap-upper-r', 'M77,50 Q92,47 116,62 L112,78 Q96,63 75,56 Z')}
-
-        {/* ── Lateral deltoid (shoulder cap) ── */}
-        {M('delt-mid-l', 'M22,64 Q12,70 10,98 Q12,110 24,108 Q34,90 32,78 Z')}
-        {M('delt-mid-r', 'M122,64 Q132,70 134,98 Q132,110 120,108 Q110,90 112,78 Z')}
-
-        {/* ── Anterior deltoid ── */}
-        {M('delt-ant-l', 'M32,78 Q22,84 20,110 Q22,120 32,118 Q40,102 40,84 Z')}
-        {M('delt-ant-r', 'M112,78 Q122,84 124,110 Q122,120 112,118 Q104,102 104,84 Z')}
-
-        {/* ── Upper pectoralis ── */}
-        {M('pec-upper-l', 'M69,56 Q54,52 38,72 Q44,90 58,92 Q66,80 72,64 Z')}
-        {M('pec-upper-r', 'M75,56 Q90,52 106,72 Q100,90 86,92 Q78,80 72,64 Z')}
-
-        {/* ── Lower pectoralis (fan shape) ── */}
-        {M('pec-lower-l', 'M58,92 Q36,98 38,126 Q52,136 68,130 Q74,116 68,94 Z')}
-        {M('pec-lower-r', 'M86,92 Q108,98 106,126 Q92,136 76,130 Q70,116 76,94 Z')}
-
-        {/* Pec definition line (bottom fold) */}
-        <path d="M38,126 Q72,136 106,126" stroke={DL} strokeWidth="0.8" fill="none" />
-
-        {/* ── Biceps ── */}
-        {M('bicep-l', 'M20,106 Q10,126 10,142 Q18,150 28,148 Q36,130 36,112 Z')}
-        {M('bicep-r', 'M124,106 Q134,126 134,142 Q126,150 116,148 Q108,130 108,112 Z')}
-
-        {/* ── Brachialis (elbow bump) ── */}
-        {M('brachialis-l', 'M10,142 Q8,154 10,164 Q18,170 26,166 Q30,154 28,148 Z')}
-        {M('brachialis-r', 'M134,142 Q136,154 134,164 Q126,170 118,166 Q114,154 116,148 Z')}
-
-        {/* ── Forearms ── */}
-        {M('forearm-l', 'M10,164 Q4,182 6,198 Q16,206 28,202 Q34,180 26,166 Z')}
-        {M('forearm-r', 'M134,164 Q140,182 138,198 Q128,206 116,202 Q110,180 118,166 Z')}
-
-        {/* ── Serratus anterior (finger lines on ribcage sides) ── */}
-        <path d="M38,90 Q32,102 34,116 M38,102 Q30,114 32,126 M38,114 Q30,126 32,138" stroke={DL} strokeWidth="0.9" fill="none" strokeLinecap="round" />
-        <path d="M106,90 Q112,102 110,116 M106,102 Q114,114 112,126 M106,114 Q114,126 112,138" stroke={DL} strokeWidth="0.9" fill="none" strokeLinecap="round" />
-
-        {/* ── Abs upper ── */}
-        {M('abs-upper', 'M48,124 Q72,132 96,124 L94,152 Q72,158 50,152 Z')}
-
-        {/* ── Abs lower ── */}
-        {M('abs-lower', 'M50,152 Q72,158 94,152 L92,174 Q72,180 52,174 Z')}
-
-        {/* Abs grid lines (linea alba + horizontal divisions) */}
-        <line x1="72" y1="122" x2="72" y2="176" stroke={DL} strokeWidth="0.8" />
-        <line x1="50" y1="138" x2="94" y2="138" stroke={DL} strokeWidth="0.7" />
-        <line x1="50" y1="152" x2="94" y2="152" stroke={DL} strokeWidth="0.7" />
-
-        {/* ── External obliques ── */}
-        {M('oblique-l', 'M38,126 Q28,146 30,174 Q36,182 48,176 L50,152 L50,124 Z')}
-        {M('oblique-r', 'M106,126 Q116,146 114,174 Q108,182 96,176 L94,152 L94,124 Z')}
-
-        {/* ── Adductors ── */}
-        {M('adductor-l', 'M58,202 Q62,248 62,290 Q56,298 48,294 Q52,250 54,204 Z')}
-        {M('adductor-r', 'M86,202 Q82,248 82,290 Q88,298 96,294 Q92,250 90,204 Z')}
-
-        {/* ── Quad vastus lateralis ── */}
-        {M('quad-vl-l', 'M38,200 Q22,246 24,290 Q34,302 48,298 Q54,254 54,202 Z')}
-        {M('quad-vl-r', 'M106,200 Q122,246 120,290 Q110,302 96,298 Q90,254 90,202 Z')}
-
-        {/* ── Quad rectus femoris ── */}
-        {M('quad-rf-l', 'M54,202 Q48,250 50,288 Q58,298 64,292 Q66,252 62,202 Z')}
-        {M('quad-rf-r', 'M90,202 Q96,250 94,288 Q86,298 80,292 Q78,252 82,202 Z')}
-
-        {/* ── Quad vastus medialis (teardrop) ── */}
-        {M('quad-vm-l', 'M50,256 Q40,272 44,286 Q54,296 64,290 Q66,274 58,254 Z')}
-        {M('quad-vm-r', 'M94,256 Q104,272 100,286 Q90,296 80,290 Q78,274 86,254 Z')}
-
-        {/* Quad definition (separation between heads) */}
-        <path d="M54,202 Q52,246 50,284" stroke={DL} strokeWidth="0.7" fill="none" />
-        <path d="M90,202 Q92,246 94,284" stroke={DL} strokeWidth="0.7" fill="none" />
-
-        {/* ── Tibialis anterior ── */}
-        {M('tibialis-l', 'M28,292 Q20,320 22,354 Q30,362 44,358 Q48,328 46,298 Z')}
-        {M('tibialis-r', 'M116,292 Q124,320 122,354 Q114,362 100,358 Q96,328 98,298 Z')}
-
-        {/* ══════════════════════════════════════════
-            BACK SILHOUETTE  (center x = 228, offset +156)
-            ══════════════════════════════════════════ */}
-
-        <ellipse cx="228" cy="19" rx="13" ry="15" fill={BC} />
-        <path d="M221,33 Q224,30 228,30 Q232,30 235,33 L233,50 L223,50 Z" fill={BC} />
-        {/* Left trap slope back */}
-        <path d="M223,50 Q208,47 184,62 L188,78 Q204,63 225,56 Z" fill={BC} />
-        {/* Right trap slope back */}
-        <path d="M233,50 Q248,47 272,62 L268,78 Q252,63 231,56 Z" fill={BC} />
-        {/* Left shoulder cap back */}
-        <path d="M178,64 Q168,70 166,98 Q168,112 180,110 Q190,92 188,78 Z" fill={BC} />
-        {/* Right shoulder cap back */}
-        <path d="M278,64 Q288,70 290,98 Q288,112 276,110 Q266,92 268,78 Z" fill={BC} />
-        {/* Torso back */}
-        <path d="M188,82 C182,108 182,146 196,162 C194,174 196,184 198,192 L258,192 C260,184 262,174 260,162 C274,146 274,108 268,82 Q228,68 188,82 Z" fill={BC} />
-        {/* Left upper arm back */}
-        <path d="M178,64 Q166,72 164,102 Q164,124 172,144 Q180,150 190,146 Q194,124 192,98 Z" fill={BC} />
-        {/* Right upper arm back */}
-        <path d="M278,64 Q290,72 292,102 Q292,124 284,144 Q276,150 266,146 Q262,124 264,98 Z" fill={BC} />
-        {/* Left forearm back */}
-        <path d="M172,144 Q164,166 166,198 Q174,206 186,202 Q194,174 190,146 Z" fill={BC} />
-        {/* Right forearm back */}
-        <path d="M284,144 Q292,166 290,198 Q282,206 270,202 Q262,174 266,146 Z" fill={BC} />
+        <path d="M124,144 Q130,166 128,198 Q120,206 106,202 Q98,176 104,148 Z" fill={B} />
         {/* Hands */}
-        <ellipse cx="177" cy="212" rx="10" ry="9" fill={BC} />
-        <ellipse cx="279" cy="212" rx="10" ry="9" fill={BC} />
+        <ellipse cx="14" cy="212" rx="11" ry="8" fill={B} />
+        <ellipse cx="116" cy="212" rx="11" ry="8" fill={B} />
+        {/* Pelvis */}
+        <path d="M36,194 L38,208 Q65,218 92,208 L94,194 Q65,204 36,194 Z" fill={B} />
+        {/* Left thigh */}
+        <path d="M34,206 Q16,252 18,298 Q28,310 48,304 Q56,258 56,206 Z" fill={B} />
+        {/* Right thigh */}
+        <path d="M96,206 Q114,252 112,298 Q102,310 82,304 Q74,258 74,206 Z" fill={B} />
+        {/* Left lower leg */}
+        <path d="M18,298 Q12,328 14,362 Q22,372 42,368 Q48,336 48,304 Z" fill={B} />
+        {/* Right lower leg */}
+        <path d="M112,298 Q118,328 116,362 Q108,372 88,368 Q82,336 82,304 Z" fill={B} />
+        {/* Feet */}
+        <path d="M14,362 Q8,378 16,384 Q28,390 44,386 Q48,376 42,368 Z" fill={B} />
+        <path d="M116,362 Q122,378 114,384 Q102,390 86,386 Q80,376 88,368 Z" fill={B} />
+
+        {/* —— Front muscles —— */}
+
+        {/* Traps (front visible: neck slopes) */}
+        {M('trap-upper-l', 'M60,57 Q44,53 20,68 L24,82 Q42,67 61,62 Z')}
+        {M('trap-upper-r', 'M70,57 Q86,53 110,68 L106,82 Q88,67 69,62 Z')}
+
+        {/* Lateral deltoid */}
+        {M('delt-mid-l', 'M12,64 Q2,72 2,100 Q4,114 16,112 Q28,92 24,80 Z')}
+        {M('delt-mid-r', 'M118,64 Q128,72 128,100 Q126,114 114,112 Q102,92 106,80 Z')}
+
+        {/* Anterior deltoid — teardrop at front of shoulder */}
+        {M('delt-ant-l', 'M24,80 Q14,86 14,110 Q16,120 26,118 Q36,104 36,84 Z')}
+        {M('delt-ant-r', 'M106,80 Q116,86 116,110 Q114,120 104,118 Q94,104 94,84 Z')}
+
+        {/* Upper pectoralis — upper fan */}
+        {M('pec-upper-l', 'M61,62 Q46,58 30,76 Q36,92 50,94 Q58,82 65,66 Z')}
+        {M('pec-upper-r', 'M69,62 Q84,58 100,76 Q94,92 80,94 Q72,82 65,66 Z')}
+
+        {/* Lower pectoralis — main fan shape */}
+        {M('pec-l', 'M50,94 Q30,100 30,128 Q44,138 60,132 Q66,118 62,96 Z')}
+        {M('pec-r', 'M80,94 Q100,100 100,128 Q86,138 70,132 Q64,118 68,96 Z')}
+
+        {/* Pec bottom fold line */}
+        <path d="M30,128 Q65,138 100,128" stroke={S} strokeWidth="1" fill="none" strokeLinecap="round" />
+        {/* Sternum / pec center line */}
+        <path d="M65,62 L65,138" stroke={S} strokeWidth="0.8" fill="none" />
+
+        {/* Bicep */}
+        {M('bi-l', 'M14,102 Q2,124 4,140 Q12,150 24,146 Q32,128 28,108 Z')}
+        {M('bi-r', 'M116,102 Q128,124 126,140 Q118,150 106,146 Q98,128 102,108 Z')}
+
+        {/* Brachialis — small oval at elbow */}
+        {M('brachialis-l', 'M4,140 Q2,152 6,162 Q14,168 22,164 Q26,152 24,146 Z')}
+        {M('brachialis-r', 'M126,140 Q128,152 124,162 Q116,168 108,164 Q104,152 106,146 Z')}
+
+        {/* Forearms */}
+        {M('forearm-l', 'M6,162 Q0,180 2,198 Q10,206 24,202 Q30,180 22,164 Z')}
+        {M('forearm-r', 'M124,162 Q130,180 128,198 Q120,206 106,202 Q110,180 108,164 Z')}
+
+        {/* Serratus anterior (finger marks on ribcage) */}
+        <path d="M30,92 Q24,104 26,116 M30,104 Q22,116 24,128 M30,116 Q22,128 24,140" stroke={S} strokeWidth="1" fill="none" strokeLinecap="round" />
+        <path d="M100,92 Q106,104 104,116 M100,104 Q108,116 106,128 M100,116 Q108,128 106,140" stroke={S} strokeWidth="1" fill="none" strokeLinecap="round" />
+
+        {/* Abs (6-pack with linea alba) */}
+        {M('abs', 'M44,130 Q65,138 86,130 L84,172 Q65,178 46,172 Z')}
+        {/* Abs grid */}
+        <line x1="65" y1="128" x2="65" y2="178" stroke={S} strokeWidth="0.9" />
+        <line x1="44" y1="146" x2="86" y2="146" stroke={S} strokeWidth="0.8" />
+        <line x1="44" y1="160" x2="86" y2="160" stroke={S} strokeWidth="0.8" />
+        <line x1="44" y1="172" x2="86" y2="172" stroke={S} strokeWidth="0.8" />
+
+        {/* Obliques */}
+        {M('oblique-l', 'M30,128 Q22,148 24,174 Q30,182 44,176 L46,172 L44,130 Z')}
+        {M('oblique-r', 'M100,128 Q108,148 106,174 Q100,182 86,176 L84,172 L86,130 Z')}
+
+        {/* Adductors (inner thigh) */}
+        {M('adductor-l', 'M56,206 Q58,250 58,292 Q52,300 44,296 Q48,250 50,206 Z')}
+        {M('adductor-r', 'M74,206 Q72,250 72,292 Q78,300 86,296 Q82,250 80,206 Z')}
+
+        {/* Quads vastus lateralis (outer thigh) */}
+        {M('quad-l', 'M34,204 Q18,250 20,294 Q28,306 46,300 Q54,256 52,204 Z')}
+        {M('quad-r', 'M96,204 Q112,250 110,294 Q102,306 84,300 Q76,256 78,204 Z')}
+
+        {/* Quad vastus medialis (teardrop inner knee) */}
+        {M('quad-vm-l', 'M50,258 Q40,276 44,292 Q54,302 62,296 Q64,278 56,256 Z')}
+        {M('quad-vm-r', 'M80,258 Q90,276 86,292 Q76,302 68,296 Q66,278 74,256 Z')}
+
+        {/* Quad definition line */}
+        <path d="M52,204 Q50,248 48,290" stroke={S} strokeWidth="0.8" fill="none" />
+        <path d="M78,204 Q80,248 82,290" stroke={S} strokeWidth="0.8" fill="none" />
+
+        {/* Tibialis anterior (shin) */}
+        <path d="M22,296 Q16,320 18,356 Q26,364 40,360 Q44,330 44,300 Z"
+          fill={fill('quad-l')} stroke={stroke('quad-l')} strokeWidth="0.8" />
+        <path d="M108,296 Q114,320 112,356 Q104,364 90,360 Q86,330 86,300 Z"
+          fill={fill('quad-r')} stroke={stroke('quad-r')} strokeWidth="0.8" />
+
+        {/* ═══════════════════════════════════════
+            BACK VIEW  (centered x=195)
+            ═══════════════════════════════════════ */}
+
+        {/* —— Body silhouette —— */}
+        <ellipse cx="195" cy="26" rx="14" ry="17" fill={B} />
+        <path d="M189,42 Q192,37 195,36 Q198,37 201,42 L200,57 L190,57 Z" fill={B} />
+        {/* Left trap slope */}
+        <path d="M190,57 Q174,53 150,68 L154,82 Q172,67 191,62 Z" fill={B} />
+        {/* Right trap slope */}
+        <path d="M200,57 Q216,53 240,68 L236,82 Q218,67 199,62 Z" fill={B} />
+        {/* Left shoulder cap */}
+        <path d="M142,64 Q132,72 132,100 Q134,116 146,114 Q158,94 154,80 Z" fill={B} />
+        {/* Right shoulder cap */}
+        <path d="M248,64 Q258,72 258,100 Q256,116 244,114 Q232,94 236,80 Z" fill={B} />
+        {/* Torso back */}
+        <path d="M154,80 C148,108 148,144 164,162 C162,175 164,188 168,196 L222,196 C226,188 228,175 226,162 C242,144 242,108 236,80 Q195,64 154,80 Z" fill={B} />
+        {/* Left upper arm back */}
+        <path d="M142,64 Q130,76 130,106 Q130,128 136,144 Q144,152 156,148 Q164,126 160,98 Z" fill={B} />
+        {/* Right upper arm back */}
+        <path d="M248,64 Q260,76 260,106 Q260,128 254,144 Q246,152 234,148 Q226,126 230,98 Z" fill={B} />
+        {/* Left forearm back */}
+        <path d="M136,144 Q130,166 132,198 Q140,206 154,202 Q162,176 156,148 Z" fill={B} />
+        {/* Right forearm back */}
+        <path d="M254,144 Q260,166 258,198 Q250,206 236,202 Q228,176 234,148 Z" fill={B} />
+        {/* Hands */}
+        <ellipse cx="144" cy="212" rx="11" ry="8" fill={B} />
+        <ellipse cx="246" cy="212" rx="11" ry="8" fill={B} />
         {/* Pelvis back */}
-        <path d="M196,190 L200,204 Q228,213 256,204 L260,190 Q228,200 196,190 Z" fill={BC} />
+        <path d="M166,194 L168,208 Q195,218 222,208 L224,194 Q195,204 166,194 Z" fill={B} />
         {/* Left thigh back */}
-        <path d="M196,202 Q178,248 180,294 Q190,306 206,300 Q214,256 214,204 Z" fill={BC} />
+        <path d="M164,206 Q146,252 148,298 Q158,310 178,304 Q186,258 186,206 Z" fill={B} />
         {/* Right thigh back */}
-        <path d="M260,202 Q278,248 276,294 Q266,306 250,300 Q242,256 242,204 Z" fill={BC} />
+        <path d="M226,206 Q244,252 242,298 Q232,310 212,304 Q204,258 204,206 Z" fill={B} />
         {/* Left lower leg back */}
-        <path d="M180,294 Q174,324 176,358 Q184,368 202,364 Q208,332 206,300 Z" fill={BC} />
+        <path d="M148,298 Q142,328 144,362 Q152,372 172,368 Q178,336 178,304 Z" fill={B} />
         {/* Right lower leg back */}
-        <path d="M276,294 Q282,324 280,358 Q272,368 254,364 Q248,332 250,300 Z" fill={BC} />
+        <path d="M242,298 Q248,328 246,362 Q238,372 218,368 Q212,336 212,304 Z" fill={B} />
         {/* Feet back */}
-        <path d="M176,358 Q170,374 178,380 Q190,386 204,382 Q208,372 202,364 Z" fill={BC} />
-        <path d="M280,358 Q286,374 278,380 Q266,386 252,382 Q246,372 254,364 Z" fill={BC} />
+        <path d="M144,362 Q138,378 146,384 Q158,390 174,386 Q178,376 172,368 Z" fill={B} />
+        <path d="M246,362 Q252,378 244,384 Q232,390 216,386 Q210,376 218,368 Z" fill={B} />
 
-        {/* ══════════════════════════════════════════
-            BACK MUSCLES
-            ══════════════════════════════════════════ */}
+        {/* —— Back muscles —— */}
 
-        {/* ── Upper traps (prominent diamond on upper back) ── */}
-        {M('trap-upper-l', 'M223,50 Q208,47 184,62 L188,78 Q204,63 225,56 Z')}
-        {M('trap-upper-r', 'M233,50 Q248,47 272,62 L268,78 Q252,63 231,56 Z')}
+        {/* Upper trapezius — large diamond from neck to mid-back */}
+        {M('trap-upper-l', 'M190,57 Q174,53 150,68 L154,82 Q172,67 191,62 Z')}
+        {M('trap-upper-r', 'M200,57 Q216,53 240,68 L236,82 Q218,67 199,62 Z')}
 
-        {/* ── Middle trapezius ── */}
-        {M('trap-mid', 'M196,78 Q228,88 260,78 Q256,106 228,112 Q200,106 196,78 Z')}
+        {/* Middle trapezius — fills between shoulder blades */}
+        {M('trap-mid', 'M160,80 Q195,92 230,80 Q226,110 195,118 Q164,110 160,80 Z')}
 
-        {/* ── Rhomboids ── */}
-        {M('rhomboid', 'M214,110 Q228,118 242,110 Q238,134 228,140 Q218,134 214,110 Z')}
+        {/* Rhomboids — between/below mid-traps */}
+        {M('rhomboid', 'M176,116 Q195,124 214,116 Q210,140 195,148 Q180,140 176,116 Z')}
 
-        {/* Trap/rhomboid definition line */}
-        <path d="M196,78 Q228,88 260,78" stroke={DL} strokeWidth="0.8" fill="none" />
+        {/* Spine definition */}
+        <line x1="195" y1="80" x2="195" y2="196" stroke={S} strokeWidth="0.9" />
+        <path d="M160,80 Q195,92 230,80" stroke={S} strokeWidth="0.9" fill="none" />
 
-        {/* ── Posterior deltoid ── */}
-        {M('delt-post-l', 'M178,64 Q168,70 166,98 Q168,110 180,108 Q190,90 188,78 Z')}
-        {M('delt-post-r', 'M278,64 Q288,70 290,98 Q288,110 276,108 Q266,90 268,78 Z')}
+        {/* Posterior deltoid — teardrop back shoulder */}
+        {M('delt-post-l', 'M142,64 Q132,72 132,100 Q134,114 146,112 Q158,92 154,80 Z')}
+        {M('delt-post-r', 'M248,64 Q258,72 258,100 Q256,114 244,112 Q232,92 236,80 Z')}
 
-        {/* ── Latissimus dorsi (large fan shape) ── */}
-        {M('lat-l', 'M188,82 Q172,106 168,162 Q180,172 198,160 Q208,132 206,80 Z')}
-        {M('lat-r', 'M268,82 Q284,106 288,162 Q276,172 258,160 Q248,132 250,80 Z')}
+        {/* Lateral deltoid back */}
+        {M('delt-mid-l', 'M154,80 Q144,88 142,110 Q144,120 154,118 Q162,104 160,84 Z')}
+        {M('delt-mid-r', 'M236,80 Q246,88 248,110 Q246,120 236,118 Q228,104 230,84 Z')}
 
-        {/* Lat separation line from rhomboid */}
-        <path d="M196,110 Q184,134 180,162" stroke={DL} strokeWidth="0.7" fill="none" />
-        <path d="M260,110 Q272,134 276,162" stroke={DL} strokeWidth="0.7" fill="none" />
+        {/* Latissimus dorsi — large V-shape fan */}
+        {M('lat-l', 'M158,84 Q142,110 140,164 Q152,174 170,162 Q180,136 178,82 Z')}
+        {M('lat-r', 'M232,84 Q248,110 250,164 Q238,174 220,162 Q210,136 212,82 Z')}
 
-        {/* ── Tricep long head ── */}
-        {M('tricep-long-l', 'M180,82 Q166,104 164,138 Q172,148 184,144 Q190,120 188,86 Z')}
-        {M('tricep-long-r', 'M276,82 Q290,104 292,138 Q284,148 272,144 Q266,120 268,86 Z')}
+        {/* Lat edge line */}
+        <path d="M178,90 Q168,126 166,160" stroke={S} strokeWidth="0.8" fill="none" />
+        <path d="M212,90 Q222,126 224,160" stroke={S} strokeWidth="0.8" fill="none" />
 
-        {/* ── Tricep lateral head ── */}
-        {M('tricep-lat-l', 'M188,86 Q180,114 182,138 Q190,146 196,142 Q196,120 192,88 Z')}
-        {M('tricep-lat-r', 'M268,86 Q276,114 274,138 Q266,146 260,142 Q260,120 264,88 Z')}
+        {/* Triceps — long head (back of upper arm) */}
+        {M('tri-l', 'M154,80 Q134,100 132,140 Q140,152 154,148 Q162,126 160,84 Z')}
+        {M('tri-r', 'M236,80 Q256,100 258,140 Q250,152 236,148 Q228,126 230,84 Z')}
 
-        {/* Tricep definition line */}
-        <path d="M188,86 Q184,112 184,136" stroke={DL} strokeWidth="0.7" fill="none" />
-        <path d="M268,86 Q272,112 272,136" stroke={DL} strokeWidth="0.7" fill="none" />
+        {/* Tricep separation line */}
+        <path d="M160,84 Q156,114 156,140" stroke={S} strokeWidth="0.7" fill="none" />
+        <path d="M230,84 Q234,114 234,140" stroke={S} strokeWidth="0.7" fill="none" />
 
-        {/* ── Forearms back ── */}
-        {M('forearm-back-l', 'M164,138 Q158,160 162,198 Q170,206 184,202 Q190,174 184,144 Z')}
-        {M('forearm-back-r', 'M292,138 Q298,160 294,198 Q286,206 270,202 Q264,174 270,144 Z')}
+        {/* Forearms back */}
+        {M('forearm-l', 'M136,144 Q128,166 132,198 Q140,206 154,202 Q160,178 154,148 Z')}
+        {M('forearm-r', 'M254,144 Q262,166 258,198 Q250,206 236,202 Q230,178 236,148 Z')}
 
-        {/* ── Erector spinae (two columns flanking spine) ── */}
-        {M('erector-l', 'M218,138 Q213,174 216,206 Q222,212 226,208 Q226,174 222,138 Z')}
-        {M('erector-r', 'M238,138 Q243,174 240,206 Q234,212 230,208 Q230,174 234,138 Z')}
+        {/* Erector spinae (two pillars beside spine) */}
+        {M('erector-l', 'M186,148 Q181,176 184,208 Q190,214 194,208 Q194,176 190,148 Z')}
+        {M('erector-r', 'M204,148 Q209,176 206,208 Q200,214 196,208 Q196,176 200,148 Z')}
 
-        {/* Spine definition line */}
-        <line x1="228" y1="110" x2="228" y2="196" stroke={DL} strokeWidth="0.8" />
+        {/* Gluteus maximus — large rounded */}
+        {M('glute-l', 'M164,204 Q146,222 146,256 Q160,268 180,258 Q186,238 186,206 Z')}
+        {M('glute-r', 'M226,204 Q244,222 244,256 Q230,268 210,258 Q204,238 204,206 Z')}
 
-        {/* ── Gluteus maximus ── */}
-        {M('glute-max-l', 'M196,200 Q178,218 176,250 Q190,262 210,252 Q216,232 214,202 Z')}
-        {M('glute-max-r', 'M260,200 Q278,218 280,250 Q266,262 246,252 Q240,232 242,202 Z')}
+        {/* Glute crease */}
+        <path d="M166,204 Q184,240 180,260" stroke={S} strokeWidth="0.9" fill="none" />
+        <path d="M224,204 Q206,240 210,260" stroke={S} strokeWidth="0.9" fill="none" />
+        {/* Glute divide (center) */}
+        <path d="M195,196 Q195,228 195,260" stroke={S} strokeWidth="1" fill="none" />
 
-        {/* Glute division line */}
-        <path d="M196,200 Q214,236 210,254" stroke={DL} strokeWidth="0.8" fill="none" />
-        <path d="M260,200 Q242,236 246,254" stroke={DL} strokeWidth="0.8" fill="none" />
+        {/* Hamstrings — two heads */}
+        {M('ham-l', 'M146,256 Q136,292 138,326 Q150,338 168,330 Q176,294 176,260 Z')}
+        {M('ham-r', 'M244,256 Q254,292 252,326 Q240,338 222,330 Q214,294 214,260 Z')}
 
-        {/* ── Hamstring biceps femoris (outer) ── */}
-        {M('hamstring-bf-l', 'M176,250 Q164,286 166,320 Q176,330 188,324 Q194,288 190,252 Z')}
-        {M('hamstring-bf-r', 'M280,250 Q292,286 290,320 Q280,330 268,324 Q262,288 266,252 Z')}
+        {/* Ham separation */}
+        <path d="M174,260 Q170,294 168,328" stroke={S} strokeWidth="0.8" fill="none" />
+        <path d="M216,260 Q220,294 222,328" stroke={S} strokeWidth="0.8" fill="none" />
 
-        {/* ── Hamstring semitendinosus (inner) ── */}
-        {M('hamstring-st-l', 'M190,252 Q192,290 188,324 Q198,332 210,322 Q212,286 214,202 Q210,232 200,252 Z')}
-        {M('hamstring-st-r', 'M266,252 Q264,290 268,324 Q258,332 246,322 Q244,286 242,202 Q246,232 256,252 Z')}
+        {/* Calves — medial + lateral heads */}
+        {M('calf-l', 'M138,326 Q130,350 134,370 Q142,378 158,372 Q164,350 162,330 Z')}
+        <path d="M162,330 Q164,352 158,370 Q166,378 178,368 Q180,346 176,328 Z"
+          fill={fill('calf-l')} stroke={stroke('calf-l')} strokeWidth="0.8" />
+        {M('calf-r', 'M252,326 Q260,350 256,370 Q248,378 232,372 Q226,350 228,330 Z')}
+        <path d="M228,330 Q226,352 232,370 Q224,378 212,368 Q210,346 214,328 Z"
+          fill={fill('calf-r')} stroke={stroke('calf-r')} strokeWidth="0.8" />
 
-        {/* Hamstring division */}
-        <path d="M190,252 Q190,288 188,322" stroke={DL} strokeWidth="0.7" fill="none" />
-        <path d="M266,252 Q266,288 268,322" stroke={DL} strokeWidth="0.7" fill="none" />
-
-        {/* ── Calves — lateral + medial heads ── */}
-        {M('calf-l', 'M166,320 Q158,346 162,364 Q170,372 182,364 Q188,344 184,322 Z')}
-        <path d="M184,322 Q186,348 180,364 Q188,372 200,362 Q204,340 200,322 Z"
-          fill={f('calf-l')} stroke={fs('calf-l')} strokeWidth={sw} strokeLinejoin="round" />
-
-        {M('calf-r', 'M290,320 Q298,346 294,364 Q286,372 274,364 Q268,344 272,322 Z')}
-        <path d="M272,322 Q270,348 276,364 Q284,372 296,362 Q300,340 296,322 Z"
-          fill={f('calf-r')} stroke={fs('calf-r')} strokeWidth={sw} strokeLinejoin="round" />
-
-        {/* Calf definition */}
-        <path d="M184,322 Q184,344 182,362" stroke={DL} strokeWidth="0.7" fill="none" />
-        <path d="M272,322 Q272,344 274,362" stroke={DL} strokeWidth="0.7" fill="none" />
+        {/* Calf separation */}
+        <path d="M162,330 Q160,352 158,370" stroke={S} strokeWidth="0.7" fill="none" />
+        <path d="M228,330 Q230,352 232,370" stroke={S} strokeWidth="0.7" fill="none" />
 
         {/* ── Legend ── */}
-        <g transform="translate(6,402)">
+        <g transform="translate(5,424)">
           <rect x="0" y="0" width="8" height="7" rx="1.5" fill="#ef4444" />
-          <text x="11" y="6.5" fill="#6a8090" fontSize="6" fontFamily="sans-serif">Primer</text>
-          <rect x="48" y="0" width="8" height="7" rx="1.5" fill="#f97316" />
-          <text x="59" y="6.5" fill="#6a8090" fontSize="6" fontFamily="sans-serif">Sekonder</text>
-          <rect x="108" y="0" width="8" height="7" rx="1.5" fill="#1b2d3e" />
-          <text x="119" y="6.5" fill="#6a8090" fontSize="6" fontFamily="sans-serif">Pasif</text>
+          <text x="11" y="6.5" fill="#4a6070" fontSize="6.5" fontFamily="sans-serif">Primer</text>
+          <rect x="50" y="0" width="8" height="7" rx="1.5" fill="#f97316" />
+          <text x="61" y="6.5" fill="#4a6070" fontSize="6.5" fontFamily="sans-serif">Sekonder</text>
+          <rect x="112" y="0" width="8" height="7" rx="1.5" fill="#253545" />
+          <text x="123" y="6.5" fill="#4a6070" fontSize="6.5" fontFamily="sans-serif">Pasif</text>
         </g>
       </svg>
 

@@ -5,11 +5,8 @@ import * as nutritionService from '../services/nutrition.service';
 export async function searchFoods(req: Request, res: Response): Promise<void> {
   try {
     const { q, limit } = req.query as { q?: string; limit?: string };
-    if (!q) {
-      res.status(400).json({ error: 'Arama terimi gerekli' });
-      return;
-    }
-    const foods = await nutritionService.searchFoods(q, limit ? parseInt(limit) : 20);
+    if (!q) { res.status(400).json({ error: 'Arama terimi gerekli' }); return; }
+    const foods = await nutritionService.searchFoods(q, limit ? parseInt(limit) : 30);
     res.json(foods);
   } catch (err) {
     console.error('searchFoods error:', err);
@@ -20,14 +17,21 @@ export async function searchFoods(req: Request, res: Response): Promise<void> {
 export async function getFoodByBarcode(req: Request, res: Response): Promise<void> {
   try {
     const food = await nutritionService.getFoodByBarcode(req.params.barcode);
-    if (!food) {
-      res.status(404).json({ error: 'Barkod bulunamadı' });
-      return;
-    }
+    if (!food) { res.status(404).json({ error: 'Barkod bulunamadı' }); return; }
     res.json(food);
   } catch (err) {
     console.error('getFoodByBarcode error:', err);
     res.status(500).json({ error: 'Barkod sorgulanamadı' });
+  }
+}
+
+export async function createCustomFood(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const food = await nutritionService.createCustomFood(req.user!.id, req.body);
+    res.status(201).json(food);
+  } catch (err) {
+    console.error('createCustomFood error:', err);
+    res.status(500).json({ error: 'Özel gıda oluşturulamadı' });
   }
 }
 
@@ -70,6 +74,17 @@ export async function getNutritionSummary(req: AuthRequest, res: Response): Prom
   } catch (err) {
     console.error('getNutritionSummary error:', err);
     res.status(500).json({ error: 'Beslenme özeti alınamadı' });
+  }
+}
+
+export async function getWeeklyHistory(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const days = req.query.days ? parseInt(req.query.days as string) : 7;
+    const history = await nutritionService.getWeeklyHistory(req.user!.id, days);
+    res.json(history);
+  } catch (err) {
+    console.error('getWeeklyHistory error:', err);
+    res.status(500).json({ error: 'Geçmiş veriler alınamadı' });
   }
 }
 

@@ -8,8 +8,8 @@ import { registerSW } from 'virtual:pwa-register';
 import './index.css';
 
 // Auto-reload when new SW activates so stale assets are never served
-registerSW({
-  onNeedRefresh(updateSW) {
+const updateSW = registerSW({
+  onNeedRefresh() {
     updateSW(true); // true = reload page after SW update
   },
   onOfflineReady() { /* PWA ready for offline */ },

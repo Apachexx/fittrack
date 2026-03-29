@@ -188,6 +188,44 @@ export async function getNutritionSummary(userId: string, date: string) {
   return summary;
 }
 
+export async function getWeeklyHistory(userId: string, days = 7) {
+  const rows = await query<{ logged_at: string; total_calories: string; total_protein: string; total_carbs: string; total_fat: string }>(
+    `SELECT logged_at::text,
+            COALESCE(SUM(f.calories * nl.servings), 0)   AS total_calories,
+            COALESCE(SUM(f.protein_g * nl.servings), 0)  AS total_protein,
+            COALESCE(SUM(f.carbs_g * nl.servings), 0)    AS total_carbs,
+            COALESCE(SUM(f.fat_g * nl.servings), 0)      AS total_fat
+     FROM nutrition_logs nl
+     JOIN foods f ON f.id = nl.food_id
+     WHERE nl.user_id = $1
+       AND nl.logged_at >= CURRENT_DATE - ($2 || ' days')::interval
+     GROUP BY logged_at
+     ORDER BY logged_at`,
+    [userId, days]
+  );
+  return rows.map((r) => ({
+    date: r.logged_at,
+    calories: Math.round(parseFloat(r.total_calories)),
+    protein: Math.round(parseFloat(r.total_protein) * 10) / 10,
+    carbs: Math.round(parseFloat(r.total_carbs) * 10) / 10,
+    fat: Math.round(parseFloat(r.total_fat) * 10) / 10,
+  }));
+}
+
+export async function createCustomFood(
+  userId: string,
+  data: { name: string; calories: number; proteinG: number; carbsG: number; fatG: number; brand?: string; servingSize?: number; servingUnit?: string }
+) {
+  return queryOne<FoodRow>(
+    `INSERT INTO foods (name, brand, calories, protein_g, carbs_g, fat_g, serving_size, serving_unit, is_verified, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, FALSE, $9) RETURNING *`,
+    [
+      data.name, data.brand ?? null, data.calories, data.proteinG, data.carbsG, data.fatG,
+      data.servingSize ?? 100, data.servingUnit ?? 'g', userId,
+    ]
+  );
+}
+
 export async function addWaterLog(userId: string, data: { loggedAt: string; amountMl: number }) {
   return queryOne(
     'INSERT INTO water_logs (user_id, logged_at, amount_ml) VALUES ($1, $2, $3) RETURNING *',

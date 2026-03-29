@@ -12,7 +12,7 @@ function toFood(f: any): Food {
     carbsG: parseFloat(f.carbs_g ?? f.carbsG) || 0,
     fatG: parseFloat(f.fat_g ?? f.fatG) || 0,
     barcode: f.barcode ?? null,
-    servingSize: f.serving_size ?? f.servingSize ?? 100,
+    servingSize: parseFloat(f.serving_size ?? f.servingSize) || 100,
     servingUnit: f.serving_unit ?? f.servingUnit ?? 'g',
     isVerified: f.is_verified ?? f.isVerified ?? false,
   };
@@ -20,9 +20,11 @@ function toFood(f: any): Food {
 
 export const nutritionApi = {
   searchFoods: (q: string) =>
-    api.get<unknown[]>('/nutrition/foods', { params: { q } }).then((r) => r.data.map(toFood)),
+    api.get<unknown[]>('/nutrition/foods', { params: { q, limit: 30 } }).then((r) => r.data.map(toFood)),
   getFoodByBarcode: (barcode: string) =>
     api.get<unknown>('/nutrition/foods/barcode/' + barcode).then((r) => toFood(r.data)),
+  createCustomFood: (data: { name: string; calories: number; proteinG: number; carbsG: number; fatG: number; brand?: string; servingSize?: number; servingUnit?: string }) =>
+    api.post<unknown>('/nutrition/foods', data).then((r) => toFood(r.data)),
   addLog: (data: { foodId: string; loggedAt: string; mealType: string; servings: number }) =>
     api.post('/nutrition/logs', data).then((r) => r.data),
   deleteLog: (id: string) => api.delete('/nutrition/logs/' + id),
@@ -30,6 +32,8 @@ export const nutritionApi = {
     api.get('/nutrition/logs', { params: { date } }).then((r) => r.data),
   getSummary: (date?: string) =>
     api.get<NutritionSummary>('/nutrition/summary', { params: { date } }).then((r) => r.data),
+  getWeeklyHistory: (days = 7) =>
+    api.get<Array<{ date: string; calories: number; protein: number; carbs: number; fat: number }>>('/nutrition/history', { params: { days } }).then((r) => r.data),
   addWater: (data: { loggedAt: string; amountMl: number }) =>
     api.post('/nutrition/water', data).then((r) => r.data),
   getWater: (date?: string) =>

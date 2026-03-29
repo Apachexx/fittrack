@@ -15,6 +15,9 @@ import { errorHandler } from './middleware/error';
 
 const app = express();
 
+// Railway/proxy desteği
+app.set('trust proxy', 1);
+
 // Güvenlik
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { User } from '@fittrack/shared';
 import { authApi } from '@/api/auth.api';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextValue {
   user: User | null;
@@ -23,22 +24,26 @@ function getUserFromStorage(): User | null {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(getUserFromStorage);
+  const qc = useQueryClient();
 
   const login = useCallback(async (email: string, password: string) => {
     const result = await authApi.login({ email, password });
     localStorage.setItem('accessToken', result.tokens.accessToken);
     localStorage.setItem('refreshToken', result.tokens.refreshToken);
     localStorage.setItem('user', JSON.stringify(result.user));
+    // Login sonrası tüm cache'i temizle — settings DB'den taze gelsin
+    qc.clear();
     setUser(result.user);
-  }, []);
+  }, [qc]);
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     const result = await authApi.register({ name, email, password });
     localStorage.setItem('accessToken', result.tokens.accessToken);
     localStorage.setItem('refreshToken', result.tokens.refreshToken);
     localStorage.setItem('user', JSON.stringify(result.user));
+    qc.clear();
     setUser(result.user);
-  }, []);
+  }, [qc]);
 
   const logout = useCallback(async () => {
     try {
@@ -47,9 +52,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
+      qc.clear();
       setUser(null);
     }
-  }, []);
+  }, [qc]);
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, logout }}>

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
+import { useAuth } from './AuthContext';
 
 interface SocketContextValue {
   socket: Socket | null;
@@ -26,13 +27,31 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
+    // Kullanıcı çıkış yaptıysa bağlantıyı kapat
+    if (!user) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setConnected(false);
+        forceUpdate((n) => n + 1);
+      }
+      return;
+    }
+
     const token = localStorage.getItem('accessToken');
     if (!token) return;
+
+    // Önceki bağlantıyı temizle
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
 
     const socket = io(BASE_URL, {
       auth: { token },
@@ -42,13 +61,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     });
 
     socketRef.current = socket;
-    // Force a re-render so consumers get the non-null socket
     forceUpdate((n) => n + 1);
 
     socket.on('connect', () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
 
-    // Token expired → refresh and reconnect
     socket.on('connect_error', async (err) => {
       if (err.message === 'token_invalid' || err.message === 'token_missing') {
         socket.io.opts.reconnection = false;
@@ -69,8 +86,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      setConnected(false);
     };
-  }, []);
+  }, [user?.id]); // user değişince (login/logout) yeniden bağlan
 
   return (
     <SocketContext.Provider value={{ socket: socketRef.current, connected }}>

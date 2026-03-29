@@ -1,0 +1,9 @@
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS calorie_goal       INTEGER        DEFAULT 2000,
+  ADD COLUMN IF NOT EXISTS protein_goal       INTEGER        DEFAULT 150,
+  ADD COLUMN IF NOT EXISTS carbs_goal         INTEGER        DEFAULT 250,
+  ADD COLUMN IF NOT EXISTS fat_goal           INTEGER        DEFAULT 65,
+  ADD COLUMN IF NOT EXISTS workouts_per_week  INTEGER        DEFAULT 4,
+  ADD COLUMN IF NOT EXISTS height_cm          INTEGER        DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS weight_kg          NUMERIC(5,1)   DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS water_goal_ml      INTEGER        DEFAULT 2500;

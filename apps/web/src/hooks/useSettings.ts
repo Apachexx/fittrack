@@ -1,6 +1,5 @@
-import { useState } from 'react';
-
-const SETTINGS_KEY = 'fittrack_settings';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { settingsApi } from '@/api/settings.api';
 
 export interface UserSettings {
   calorieGoal: number;
@@ -13,7 +12,7 @@ export interface UserSettings {
   waterGoalMl: number;
 }
 
-const DEFAULTS: UserSettings = {
+export const SETTINGS_DEFAULTS: UserSettings = {
   calorieGoal: 2000,
   proteinGoal: 150,
   carbsGoal: 250,
@@ -25,20 +24,27 @@ const DEFAULTS: UserSettings = {
 };
 
 export function useSettings() {
-  const [settings, setSettings] = useState<UserSettings>(() => {
-    try {
-      const raw = localStorage.getItem(SETTINGS_KEY);
-      if (!raw) return DEFAULTS;
-      return { ...DEFAULTS, ...JSON.parse(raw) };
-    } catch {
-      return DEFAULTS;
-    }
+  const qc = useQueryClient();
+
+  const { data: settings = SETTINGS_DEFAULTS } = useQuery({
+    queryKey: ['settings'],
+    queryFn: settingsApi.get,
+    staleTime: Infinity,
+  });
+
+  const { mutate } = useMutation({
+    mutationFn: (updates: Partial<UserSettings>) =>
+      settingsApi.put({ ...settings, ...updates }),
+    onSuccess: (_data, updates) => {
+      qc.setQueryData(['settings'], (prev: UserSettings) => ({
+        ...prev,
+        ...updates,
+      }));
+    },
   });
 
   function save(updates: Partial<UserSettings>) {
-    const next = { ...settings, ...updates };
-    setSettings(next);
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+    mutate(updates);
   }
 
   return { settings, save };

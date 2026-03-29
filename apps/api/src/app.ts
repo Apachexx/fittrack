@@ -13,6 +13,7 @@ import nutritionRoutes from './routes/nutrition.routes';
 import programRoutes from './routes/program.routes';
 import progressRoutes from './routes/progress.routes';
 import chatRoutes from './routes/chat.routes';
+import settingsRoutes from './routes/settings.routes';
 import { errorHandler } from './middleware/error';
 import { attachSocketServer } from './socket';
 
@@ -52,6 +53,7 @@ app.use('/api/nutrition', nutritionRoutes);
 app.use('/api/programs', programRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {

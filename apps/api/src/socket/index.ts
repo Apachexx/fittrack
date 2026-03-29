@@ -137,6 +137,9 @@ export function attachSocketServer(httpServer: http.Server) {
     socket.on('admin:delete_msg', async ({ messageId }: { messageId: string }) => {
       try {
         if (!(await chat.isModerator(userId))) return;
+        // Mesajın sahibi admin mi? Öyleyse moderatör silemez
+        const msgOwner = await chat.getMessageOwner(messageId);
+        if (msgOwner && await chat.isAdmin(msgOwner) && !(await chat.isAdmin(userId))) return;
         await chat.deleteMessage(messageId, userId);
         io.to('public').emit('chat:deleted', { messageId });
       } catch (e) { console.error('admin:delete_msg', e); }
@@ -150,6 +153,8 @@ export function attachSocketServer(httpServer: http.Server) {
         const callerIsAdmin = await chat.isAdmin(userId);
         const callerIsMod = await chat.isModerator(userId);
         if (!callerIsMod) return;
+        // Mod adminleri engelleyemez
+        if (!callerIsAdmin && await chat.isAdmin(targetId)) return;
         // Mod sadece süreli ban yapabilir
         if (!callerIsAdmin && !durationMinutes) return;
         const ban = await chat.banUser(targetId, userId, reason, durationMinutes);

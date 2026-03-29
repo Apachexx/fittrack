@@ -50,7 +50,7 @@ function UserPopup({
   user, pos, meId, meIsAdmin, meIsMod, friends, sentIds, modIds,
   onRequest, onRemoveFriend, onClose, onSetMod, onBanTarget,
 }: {
-  user: { id: string; name: string };
+  user: { id: string; name: string; isAdmin?: boolean };
   pos: { x: number; y: number };
   meId: string; meIsAdmin: boolean; meIsMod: boolean;
   friends: Friend[]; sentIds: string[]; modIds: string[];
@@ -104,8 +104,8 @@ function UserPopup({
           </button>
         )}
 
-        {/* Mod actions */}
-        {(meIsAdmin || meIsMod) && (
+        {/* Mod actions — mods cannot ban admins */}
+        {(meIsAdmin || (meIsMod && !user.isAdmin)) && (
           <button onClick={() => { onBanTarget(user); onClose(); }}
             className="w-full py-1.5 rounded-xl text-xs font-medium transition-all text-left px-2"
             style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
@@ -191,7 +191,7 @@ export default function ChatPage() {
   const [userSearch, setUserSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [banTarget, setBanTarget] = useState<{ id: string; name: string } | null>(null);
-  const [popup, setPopup] = useState<{ user: { id: string; name: string }; pos: { x: number; y: number } } | null>(null);
+  const [popup, setPopup] = useState<{ user: { id: string; name: string; isAdmin?: boolean }; pos: { x: number; y: number } } | null>(null);
   const [unread, setUnread] = useState<Record<string, number>>({});
   const [newWord, setNewWord] = useState('');
   const [sentRequestIds, setSentRequestIds] = useState<string[]>([]);
@@ -324,10 +324,10 @@ export default function ChatPage() {
     socket?.emit('admin:ban', { targetId: banTarget.id, reason, durationMinutes: minutes });
     setTimeout(() => refetchBans(), 500);
   }
-  function openPopup(e: React.MouseEvent, u: { id: string; name: string }) {
+  function openPopup(e: React.MouseEvent, u: { id: string; name: string; isAdmin?: boolean; is_admin?: boolean }) {
     if (u.id === user?.id) return;
     e.stopPropagation();
-    setPopup({ user: u, pos: { x: e.clientX, y: e.clientY } });
+    setPopup({ user: { id: u.id, name: u.name, isAdmin: u.isAdmin ?? u.is_admin ?? false }, pos: { x: e.clientX, y: e.clientY } });
   }
 
   const totalUnread = Object.values(unread).reduce((a, b) => a + b, 0);
@@ -464,14 +464,14 @@ export default function ChatPage() {
         return (
           <div key={msg.id} className={`flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
             {!isMe && (
-              <button onClick={(e) => openPopup(e, { id: msg.userId!, name: msg.userName })} className="shrink-0 self-end mb-5">
+              <button onClick={(e) => openPopup(e, { id: msg.userId!, name: msg.userName, isAdmin: msg.isAdmin })} className="shrink-0 self-end mb-5">
                 <Avatar name={msg.userName} size={8} />
               </button>
             )}
             <div className={`max-w-[72%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
               {!isMe && (
                 <div className="flex items-center gap-1.5 mb-0.5 px-1">
-                  <button onClick={(e) => openPopup(e, { id: msg.userId!, name: msg.userName })}
+                  <button onClick={(e) => openPopup(e, { id: msg.userId!, name: msg.userName, isAdmin: msg.isAdmin })}
                     className="text-[11px] text-gray-500 hover:text-orange-400 transition-colors">
                     {msg.userName}
                   </button>
@@ -495,8 +495,8 @@ export default function ChatPage() {
                     className="text-[10px] px-1.5 py-0.5 rounded-lg text-gray-600 hover:text-red-400 transition-all"
                     style={{ background: 'rgba(255,255,255,0.04)' }}>🗑</button>
                 )}
-                {/* Mod/Admin delete others */}
-                {!isMe && (isAdmin || isMod) && msg.userId && (
+                {/* Mod/Admin delete others — mod cannot touch admin messages */}
+                {!isMe && msg.userId && (isAdmin || (isMod && !msg.isAdmin)) && (
                   <>
                     <button onClick={() => deleteMsgAsAdmin(msg.id)} title="Mesajı Sil"
                       className="text-[10px] px-1.5 py-0.5 rounded-lg text-red-400 hover:text-white transition-all"

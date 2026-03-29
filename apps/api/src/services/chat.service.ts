@@ -200,6 +200,13 @@ export async function deleteOwnMessage(messageId: string, userId: string) {
   return result.length > 0;
 }
 
+export async function getMessageOwner(messageId: string): Promise<string | null> {
+  const rows = await query<{ user_id: string }>(
+    'SELECT user_id FROM chat_messages WHERE id = $1', [messageId]
+  );
+  return rows[0]?.user_id ?? null;
+}
+
 export async function deleteMessage(messageId: string, deletedBy: string) {
   await query(
     'UPDATE chat_messages SET is_deleted = TRUE, deleted_by = $2 WHERE id = $1',

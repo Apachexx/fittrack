@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const chat_controller_1 = require("../controllers/chat.controller");
+const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth);
+router.get('/messages', chat_controller_1.getMessages);
+router.get('/friends', chat_controller_1.getFriends);
+router.get('/requests', chat_controller_1.getPendingRequests);
+router.get('/dm/:userId', chat_controller_1.getDMs);
+router.get('/unread', chat_controller_1.getUnreadCounts);
+router.get('/users', chat_controller_1.searchUsers);
+router.get('/me', chat_controller_1.getMe);
+// Admin
+router.get('/admin/mods', chat_controller_1.getModerators);
+router.get('/admin/bans', chat_controller_1.getBans);
+router.delete('/admin/bans/:id', chat_controller_1.unban);
+router.get('/admin/words', chat_controller_1.getBannedWords);
+router.post('/admin/words', chat_controller_1.addBannedWord);
+router.delete('/admin/words/:id', chat_controller_1.removeBannedWord);
+exports.default = router;

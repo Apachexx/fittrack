@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const validate_1 = require("../middleware/validate");
+const shared_1 = require("@fittrack/shared");
+const workout_controller_1 = require("../controllers/workout.controller");
+const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth);
+// Antrenmanlar
+router.get('/', workout_controller_1.listWorkouts);
+router.post('/', (0, validate_1.validate)(shared_1.createWorkoutSchema), workout_controller_1.createWorkout);
+router.get('/exercises', workout_controller_1.listExercises);
+router.post('/exercises', (0, validate_1.validate)(shared_1.createExerciseSchema), workout_controller_1.createExercise);
+router.get('/personal-records', workout_controller_1.getPersonalRecords);
+router.get('/dates', workout_controller_1.getWorkoutDates);
+router.get('/exercises/:exerciseId/last-session', workout_controller_1.getExerciseLastSession);
+router.get('/:id', workout_controller_1.getWorkout);
+router.put('/:id', workout_controller_1.updateWorkout);
+router.delete('/:id', workout_controller_1.deleteWorkout);
+router.post('/:id/sets', (0, validate_1.validate)(shared_1.addSetSchema), workout_controller_1.addSet);
+exports.default = router;

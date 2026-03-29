@@ -8,10 +8,17 @@ dotenv.config();
 async function migrate() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-  const migrationsDir = path.join(__dirname, 'migrations');
+  // Works both from src/ (ts-node) and dist/ (node) by searching up for the migrations dir
+  let migrationsDir = path.join(__dirname, 'migrations');
+  if (!fs.existsSync(migrationsDir)) {
+    // Running from dist/db/ — migrations are in src/db/migrations
+    migrationsDir = path.join(__dirname, '..', '..', 'src', 'db', 'migrations');
+  }
+
   const files = fs.readdirSync(migrationsDir).sort();
 
   console.log('Migration başlatılıyor...');
+  console.log('Migrations dizini:', migrationsDir);
 
   for (const file of files) {
     if (!file.endsWith('.sql')) continue;

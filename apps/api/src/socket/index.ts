@@ -48,13 +48,18 @@ export function attachSocketServer(httpServer: http.Server) {
     if (sockets) sockets.forEach((sid) => io.to(sid).emit(event, data));
   }
 
+  async function broadcastOnline() {
+    const ids = [...onlineUsers.keys()];
+    const users = await chat.getUserNames(ids);
+    io.to('public').emit('users:online', users);
+  }
+
   io.on('connection', async (socket) => {
     const userId = socket.data.userId as string;
     addOnline(userId, socket.id);
     socket.join('public');
 
-    // Broadcast online list
-    io.to('public').emit('users:online', [...onlineUsers.keys()]);
+    await broadcastOnline();
 
     /* ── Public chat ── */
     socket.on('chat:send', async (content: string) => {
@@ -174,7 +179,7 @@ export function attachSocketServer(httpServer: http.Server) {
 
     socket.on('disconnect', () => {
       removeOnline(userId, socket.id);
-      io.to('public').emit('users:online', [...onlineUsers.keys()]);
+      broadcastOnline();
     });
   });
 

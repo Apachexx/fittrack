@@ -208,6 +208,14 @@ export async function deleteMessage(messageId: string, deletedBy: string) {
 }
 
 /* ─────────────── users ─── */
+export async function getUserNames(ids: string[]): Promise<{ id: string; name: string; is_mod: boolean; is_admin: boolean }[]> {
+  if (ids.length === 0) return [];
+  return query<{ id: string; name: string; is_mod: boolean; is_admin: boolean }>(
+    `SELECT id, name, is_moderator AS is_mod, is_admin FROM users WHERE id = ANY($1)`,
+    [ids]
+  );
+}
+
 export async function searchUsers(q: string, exclude: string) {
   return query<{ id: string; name: string }>(
     `SELECT id, name FROM users

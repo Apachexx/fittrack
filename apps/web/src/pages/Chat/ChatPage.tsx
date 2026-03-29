@@ -181,7 +181,7 @@ export default function ChatPage() {
   const [publicMsgs, setPublicMsgs] = useState<Msg[]>([]);
   const [dmMsgs, setDmMsgs] = useState<DM[]>([]);
   const [activeDM, setActiveDM] = useState<{ id: string; name: string } | null>(null);
-  const [onlineIds, setOnlineIds] = useState<string[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; is_mod: boolean; is_admin: boolean }[]>([]);
   const [input, setInput] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -250,7 +250,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('users:online', (ids: string[]) => setOnlineIds(ids));
+    socket.on('users:online', (users: { id: string; name: string; is_mod: boolean; is_admin: boolean }[]) => setOnlineUsers(users));
     socket.on('chat:message', (msg: Msg) => setPublicMsgs((p) => [...p.slice(-199), msg]));
     socket.on('chat:deleted', ({ messageId }: { messageId: string }) =>
       setPublicMsgs((p) => p.filter((m) => m.id !== messageId)));
@@ -322,7 +322,7 @@ export default function ChatPage() {
     <div className="w-52 shrink-0 flex flex-col gap-3 h-full overflow-y-auto">
       <div className="flex items-center gap-2 px-1">
         <div className={`w-2 h-2 rounded-full shrink-0 ${connected ? 'bg-green-400' : 'bg-yellow-500 animate-pulse'}`} />
-        <span className="text-xs text-gray-500">{connected ? `${onlineIds.length} çevrimiçi` : 'Bağlanıyor...'}</span>
+        <span className="text-xs text-gray-500">{connected ? `${onlineUsers.map(u=>u.id).length} çevrimiçi` : 'Bağlanıyor...'}</span>
       </div>
 
       {(requests as PendingReq[]).length > 0 && (
@@ -333,8 +333,13 @@ export default function ChatPage() {
           <div className="space-y-2">
             {(requests as PendingReq[]).map((r) => (
               <div key={r.id} className="flex items-center gap-2">
-                <Avatar name={r.requester_name} size={7} />
-                <span className="text-xs text-gray-300 flex-1 truncate">{r.requester_name}</span>
+                <button onClick={(e) => openPopup(e, { id: r.requester_id, name: r.requester_name })} className="shrink-0">
+                  <Avatar name={r.requester_name} size={7} />
+                </button>
+                <button className="text-xs text-gray-300 flex-1 truncate text-left hover:text-white transition-colors"
+                  onClick={(e) => openPopup(e, { id: r.requester_id, name: r.requester_name })}>
+                  {r.requester_name}
+                </button>
                 <button onClick={() => acceptRequest(r.id)} title="Kabul" className="w-6 h-6 rounded-lg flex items-center justify-center text-green-400 hover:text-white shrink-0" style={{ background: 'rgba(34,197,94,0.15)' }}>✓</button>
                 <button onClick={() => rejectRequest(r.id)} title="Reddet" className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-white shrink-0" style={{ background: 'rgba(239,68,68,0.15)' }}>✕</button>
               </div>
@@ -343,29 +348,61 @@ export default function ChatPage() {
         </div>
       )}
 
+      {/* Friends */}
       <div className="card p-3">
         <p className="text-xs font-semibold text-gray-400 mb-2">Arkadaşlar ({(friends as Friend[]).length})</p>
         {(friends as Friend[]).length === 0 && <p className="text-xs text-gray-600">Henüz arkadaşın yok</p>}
         <div className="space-y-0.5">
           {(friends as Friend[]).map((f) => {
-            const isOnline = onlineIds.includes(f.otherUser.id);
+            const isOnline = onlineUsers.map(u=>u.id).includes(f.otherUser.id);
             const dmUnread = unread[f.otherUser.id] ?? 0;
             return (
-              <button key={f.id} onClick={() => { setActiveDM(f.otherUser); setTab('dm'); }}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-xl text-left transition-all hover:bg-white/[0.04]"
-                style={activeDM?.id === f.otherUser.id && tab === 'dm' ? { background: 'rgba(249,115,22,0.1)' } : {}}>
-                <div className="relative">
+              <div key={f.id} className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/[0.04] transition-all"
+                style={activeDM?.id === f.otherUser.id && tab === 'dm' ? { background: 'rgba(249,115,22,0.08)' } : {}}>
+                {/* Avatar → profile popup */}
+                <button className="relative shrink-0" onClick={(e) => openPopup(e, f.otherUser)}>
                   <Avatar name={f.otherUser.name} size={7} />
                   <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 ${isOnline ? 'bg-green-400' : 'bg-gray-600'}`} style={{ borderColor: '#080c14' }} />
-                </div>
-                <span className="text-xs text-gray-300 flex-1 truncate">{f.otherUser.name}</span>
-                {dmUnread > 0 && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white shrink-0" style={{ background: '#f97316' }}>{dmUnread > 9 ? '9+' : dmUnread}</span>}
-              </button>
+                </button>
+                {/* Name → open DM */}
+                <button className="text-xs text-gray-300 flex-1 truncate text-left hover:text-white transition-colors"
+                  onClick={() => { setActiveDM(f.otherUser); setTab('dm'); }}>
+                  {f.otherUser.name}
+                </button>
+                {dmUnread > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white shrink-0" style={{ background: '#f97316' }}>
+                    {dmUnread > 9 ? '9+' : dmUnread}
+                  </span>
+                )}
+              </div>
             );
           })}
         </div>
       </div>
 
+      {/* Online users (not friends) */}
+      {onlineUsers.filter((u) => u.id !== user?.id && !(friends as Friend[]).some((f) => f.otherUser.id === u.id)).length > 0 && (
+        <div className="card p-3">
+          <p className="text-xs font-semibold text-gray-400 mb-2">Çevrimiçi</p>
+          <div className="space-y-0.5">
+            {onlineUsers
+              .filter((u) => u.id !== user?.id && !(friends as Friend[]).some((f) => f.otherUser.id === u.id))
+              .map((u) => (
+                <button key={u.id} onClick={(e) => openPopup(e, u)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-xl text-left hover:bg-white/[0.04] transition-all">
+                  <div className="relative shrink-0">
+                    <Avatar name={u.name} size={7} />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2" style={{ borderColor: '#080c14' }} />
+                  </div>
+                  <span className="text-xs text-gray-300 flex-1 truncate">{u.name}</span>
+                  {(u.is_admin || u.is_mod) && <RoleBadge isAdmin={u.is_admin} isMod={u.is_mod} />}
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* User search */}
       <div className="card p-3">
         <p className="text-xs font-semibold text-gray-400 mb-2">Kullanıcı Bul</p>
         <input className="input text-xs py-1.5 w-full mb-2" placeholder="İsim ara..."
@@ -376,13 +413,19 @@ export default function ChatPage() {
             const pending = sentRequestIds.includes(u.id);
             return (
               <div key={u.id} className="flex items-center gap-2">
-                <Avatar name={u.name} size={6} />
+                {/* Avatar → profile popup */}
+                <button onClick={(e) => openPopup(e, u)} className="shrink-0">
+                  <Avatar name={u.name} size={6} />
+                </button>
                 <span className="text-xs text-gray-300 flex-1 truncate">{u.name}</span>
-                {alreadyFriend ? <span className="text-[10px] text-green-500 shrink-0">✓</span>
-                  : pending ? <span className="text-[10px] text-gray-500 shrink-0">bekliyor</span>
-                  : <button onClick={() => sendFriendRequest(u.id)}
-                      className="text-[10px] px-2 py-0.5 rounded-lg text-orange-400 hover:text-white transition-all shrink-0"
-                      style={{ background: 'rgba(249,115,22,0.1)' }}>+ Ekle</button>}
+                {alreadyFriend
+                  ? <span className="text-[10px] text-green-500 shrink-0">✓</span>
+                  : pending
+                    ? <span className="text-[10px] text-gray-500 shrink-0">bekliyor</span>
+                    : <button onClick={() => sendFriendRequest(u.id)}
+                        className="text-[10px] px-2 py-0.5 rounded-lg text-orange-400 hover:text-white transition-all shrink-0"
+                        style={{ background: 'rgba(249,115,22,0.1)' }}>+ Ekle</button>
+                }
               </div>
             );
           })}
@@ -602,11 +645,22 @@ export default function ChatPage() {
             style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
             <div className="flex items-center gap-2">
               {tab === 'public' && <><span>💬</span><span className="text-sm font-semibold text-white">Genel Sohbet</span></>}
-              {tab === 'dm' && activeDM && <><Avatar name={activeDM.name} size={7} /><div><p className="text-sm font-semibold text-white">{activeDM.name}</p><p className="text-xs" style={{ color: onlineIds.includes(activeDM.id) ? '#4ade80' : '#6b7280' }}>{onlineIds.includes(activeDM.id) ? 'Çevrimiçi' : 'Çevrimdışı'}</p></div></>}
+              {tab === 'dm' && activeDM && (
+                <button className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+                  onClick={(e) => openPopup(e, activeDM)}>
+                  <Avatar name={activeDM.name} size={7} />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-white">{activeDM.name}</p>
+                    <p className="text-xs" style={{ color: onlineUsers.map(u=>u.id).includes(activeDM.id) ? '#4ade80' : '#6b7280' }}>
+                      {onlineUsers.map(u=>u.id).includes(activeDM.id) ? 'Çevrimiçi' : 'Çevrimdışı'}
+                    </p>
+                  </div>
+                </button>
+              )}
               {tab === 'dm' && !activeDM && <span className="text-sm text-gray-500">Özel Mesajlar</span>}
               {tab === 'admin' && <span className="text-sm font-semibold text-red-400">🛡️ Yönetim Paneli</span>}
             </div>
-            {tab === 'public' && <span className="text-xs text-gray-600">{onlineIds.length} çevrimiçi</span>}
+            {tab === 'public' && <span className="text-xs text-gray-600">{onlineUsers.map(u=>u.id).length} çevrimiçi</span>}
           </div>
 
           {tab === 'admin' ? adminEl : messagesEl}

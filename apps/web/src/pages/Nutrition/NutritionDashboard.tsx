@@ -129,12 +129,15 @@ function FoodSearchModal({ date, initialMeal, onClose, onAdded }: SearchModalPro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(8,12,20,0.97)' }}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full sm:max-w-lg flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden"
+        style={{ background: '#0c1420', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '88vh' }}>
       {/* Top bar */}
       <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.06] shrink-0">
         <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-1">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
-            <path d="M19 12H5M12 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
           </svg>
         </button>
         <h2 className="text-base font-semibold text-white flex-1">Gıda Ekle</h2>
@@ -250,6 +253,7 @@ function FoodSearchModal({ date, initialMeal, onClose, onAdded }: SearchModalPro
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );

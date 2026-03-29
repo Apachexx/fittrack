@@ -45,34 +45,70 @@ export async function getProgram(id: string) {
   );
   if (!program) return null;
 
-  const weeks = await query<{ id: string; week_number: number }>(
-    'SELECT * FROM program_weeks WHERE program_id = $1 ORDER BY week_number',
+  // Single query to fetch all weeks, days, and exercises at once
+  const rows = await query<{
+    week_id: string; week_number: number;
+    day_id: string | null; day_number: number | null; day_name: string | null; is_rest_day: boolean | null;
+    pde_id: string | null; exercise_id: string | null; exercise_name: string | null;
+    muscle_group: string | null; sets: number | null; reps: string | null;
+    rest_secs: number | null; sort_order: number | null;
+  }>(
+    `SELECT
+       pw.id AS week_id, pw.week_number,
+       pd.id AS day_id, pd.day_number, pd.name AS day_name, pd.is_rest_day,
+       pde.id AS pde_id, pde.exercise_id, e.name AS exercise_name, e.muscle_group,
+       pde.sets, pde.reps, pde.rest_secs, pde.sort_order
+     FROM program_weeks pw
+     LEFT JOIN program_days pd ON pd.week_id = pw.id
+     LEFT JOIN program_day_exercises pde ON pde.day_id = pd.id
+     LEFT JOIN exercises e ON e.id = pde.exercise_id
+     WHERE pw.program_id = $1
+     ORDER BY pw.week_number, pd.day_number, pde.sort_order`,
     [id]
   );
 
-  const weeksWithDays = await Promise.all(
-    weeks.map(async (week) => {
-      const days = await query<{ id: string; day_number: number; name: string; is_rest_day: boolean }>(
-        'SELECT * FROM program_days WHERE week_id = $1 ORDER BY day_number',
-        [week.id]
-      );
+  // Reconstruct nested structure from flat rows
+  const weekMap = new Map<string, { id: string; week_number: number; days: Map<string, { id: string; day_number: number; name: string; is_rest_day: boolean; exercises: unknown[] }> }>();
 
-      const daysWithExercises = await Promise.all(
-        days.map(async (day) => {
-          const exercises = await query(
-            `SELECT pde.*, e.name AS exercise_name, e.muscle_group
-             FROM program_day_exercises pde
-             JOIN exercises e ON e.id = pde.exercise_id
-             WHERE pde.day_id = $1 ORDER BY pde.sort_order`,
-            [day.id]
-          );
-          return { ...day, exercises };
-        })
-      );
+  for (const row of rows) {
+    if (!weekMap.has(row.week_id)) {
+      weekMap.set(row.week_id, { id: row.week_id, week_number: row.week_number, days: new Map() });
+    }
+    const week = weekMap.get(row.week_id)!;
 
-      return { ...week, days: daysWithExercises };
-    })
-  );
+    if (row.day_id) {
+      if (!week.days.has(row.day_id)) {
+        week.days.set(row.day_id, {
+          id: row.day_id,
+          day_number: row.day_number!,
+          name: row.day_name!,
+          is_rest_day: row.is_rest_day!,
+          exercises: [],
+        });
+      }
+      const day = week.days.get(row.day_id)!;
+
+      if (row.pde_id) {
+        day.exercises.push({
+          id: row.pde_id,
+          day_id: row.day_id,
+          exercise_id: row.exercise_id,
+          exercise_name: row.exercise_name,
+          muscle_group: row.muscle_group,
+          sets: row.sets,
+          reps: row.reps,
+          rest_secs: row.rest_secs,
+          sort_order: row.sort_order,
+        });
+      }
+    }
+  }
+
+  const weeksWithDays = Array.from(weekMap.values()).map((week) => ({
+    id: week.id,
+    week_number: week.week_number,
+    days: Array.from(week.days.values()),
+  }));
 
   return { ...program, weeks: weeksWithDays };
 }

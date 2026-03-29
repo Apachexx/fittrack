@@ -49,7 +49,7 @@ export async function getWeeklySummary(userId: string, weeks = 12) {
        ws.week_start + '6 days'::interval AS week_end,
        COUNT(DISTINCT w.id) AS total_workouts,
        COALESCE(SUM(wset.set_number), 0) AS total_sets,
-       COALESCE(SUM(NULLIF(wset.weight_kg, '')::numeric * wset.reps), 0) AS total_volume
+       COALESCE(SUM(wset.weight_kg * wset.reps), 0) AS total_volume
      FROM week_series ws
      LEFT JOIN workouts w ON w.user_id = $1
        AND date_trunc('week', w.started_at) = ws.week_start

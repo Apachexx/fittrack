@@ -9,10 +9,19 @@ import './index.css';
 
 // Auto-reload when new SW activates so stale assets are never served
 registerSW({
-  onNeedRefresh() { /* autoUpdate handles this */ },
+  onNeedRefresh(updateSW) {
+    updateSW(true); // true = reload page after SW update
+  },
   onOfflineReady() { /* PWA ready for offline */ },
   immediate: true,
 });
+
+// Fallback: reload on SW controller change (skipWaiting + clientsClaim flow)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {

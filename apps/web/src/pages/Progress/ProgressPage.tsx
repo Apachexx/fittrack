@@ -134,6 +134,10 @@ export default function ProgressPage() {
       setShowAddForm(false);
       setForm({ measuredAt: new Date().toISOString().split('T')[0], weightKg: '', bodyFat: '', chestCm: '', waistCm: '', hipsCm: '' });
     },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Ölçüm kaydedilemedi';
+      alert(msg);
+    },
   });
 
   const latestWeight = measurements?.[0]?.weightKg;

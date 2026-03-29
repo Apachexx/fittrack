@@ -245,7 +245,7 @@ export async function getExerciseStrengthTrend(userId: string, exerciseId: strin
      FROM workout_sets ws
      JOIN workouts w ON w.id = ws.workout_id
      WHERE w.user_id = $1 AND ws.exercise_id = $2
-       AND ws.weight_kg IS NOT NULL AND ws.completed = TRUE
+       AND ws.weight_kg IS NOT NULL
      GROUP BY DATE(w.started_at)
      ORDER BY date DESC
      LIMIT 8`,

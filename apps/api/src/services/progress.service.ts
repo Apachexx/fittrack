@@ -53,7 +53,7 @@ export async function getWeeklySummary(userId: string, weeks = 12) {
      FROM week_series ws
      LEFT JOIN workouts w ON w.user_id = $1
        AND date_trunc('week', w.started_at) = ws.week_start
-     LEFT JOIN workout_sets wset ON wset.workout_id = w.id AND wset.completed = TRUE
+     LEFT JOIN workout_sets wset ON wset.workout_id = w.id
      GROUP BY ws.week_start
      ORDER BY ws.week_start`,
     [userId, weeks]
@@ -65,7 +65,7 @@ export async function getPRHistory(userId: string, exerciseId: string) {
     `SELECT ws.weight_kg, ws.reps, w.started_at AS achieved_at
      FROM workout_sets ws
      JOIN workouts w ON w.id = ws.workout_id
-     WHERE w.user_id = $1 AND ws.exercise_id = $2 AND ws.completed = TRUE AND ws.weight_kg IS NOT NULL
+     WHERE w.user_id = $1 AND ws.exercise_id = $2 AND ws.weight_kg IS NOT NULL
      ORDER BY w.started_at`,
     [userId, exerciseId]
   );

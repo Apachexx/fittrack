@@ -26,7 +26,7 @@ export const SETTINGS_DEFAULTS: UserSettings = {
 export function useSettings() {
   const qc = useQueryClient();
 
-  const { data: settings = SETTINGS_DEFAULTS } = useQuery({
+  const { data: settings = SETTINGS_DEFAULTS, isLoading } = useQuery({
     queryKey: ['settings'],
     queryFn: settingsApi.get,
     staleTime: Infinity,
@@ -47,5 +47,5 @@ export function useSettings() {
     mutate(updates);
   }
 
-  return { settings, save };
+  return { settings, save, isLoading };
 }

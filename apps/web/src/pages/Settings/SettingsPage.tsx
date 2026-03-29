@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/context/AuthContext';
 
@@ -76,10 +76,19 @@ const GOALS_CALC = [
 const FAT_MIN_PER_KG = 0.8;
 
 export default function SettingsPage() {
-  const { settings, save } = useSettings();
+  const { settings, save, isLoading } = useSettings();
   const { user } = useAuth();
   const [tab, setTab] = useState<'profile' | 'nutrition'>('profile');
   const [local, setLocal] = useState({ ...settings });
+
+  // DB'den gerçek değerler geldiğinde local state'i güncelle (sadece bir kez)
+  const synced = useRef(false);
+  useEffect(() => {
+    if (!isLoading && !synced.current) {
+      synced.current = true;
+      setLocal({ ...settings });
+    }
+  }, [isLoading, settings]);
 
   // Kalori hesaplayıcı — localStorage'dan yüklenir
   const saved = loadCalcState();

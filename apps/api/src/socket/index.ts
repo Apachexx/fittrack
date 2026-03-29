@@ -117,6 +117,14 @@ export function attachSocketServer(httpServer: http.Server) {
       catch (e) { console.error('friend:reject', e); }
     });
 
+    socket.on('friend:remove', async ({ friendId }: { friendId: string }) => {
+      try {
+        await chat.removeFriend(userId, friendId);
+        socket.emit('friend:removed', { friendId });
+        emitToUser(friendId, 'friend:removed', { friendId: userId });
+      } catch (e) { console.error('friend:remove', e); }
+    });
+
     /* ── Kendi mesajını sil ── */
     socket.on('msg:delete_own', async ({ messageId }: { messageId: string }) => {
       try {

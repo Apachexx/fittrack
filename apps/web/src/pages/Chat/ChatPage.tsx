@@ -48,13 +48,14 @@ function RoleBadge({ isAdmin, isMod }: { isAdmin: boolean; isMod: boolean }) {
 /* ────────── UserPopup ────────── */
 function UserPopup({
   user, pos, meId, meIsAdmin, meIsMod, friends, sentIds, modIds,
-  onRequest, onClose, onSetMod, onBanTarget,
+  onRequest, onRemoveFriend, onClose, onSetMod, onBanTarget,
 }: {
   user: { id: string; name: string };
   pos: { x: number; y: number };
   meId: string; meIsAdmin: boolean; meIsMod: boolean;
   friends: Friend[]; sentIds: string[]; modIds: string[];
   onRequest: (id: string) => void;
+  onRemoveFriend: (id: string) => void;
   onClose: () => void;
   onSetMod: (id: string, val: boolean) => void;
   onBanTarget: (u: { id: string; name: string }) => void;
@@ -88,7 +89,11 @@ function UserPopup({
       <div className="space-y-1.5">
         {/* Friend request */}
         {isFriend ? (
-          <p className="text-xs text-green-400 py-1">✓ Arkadaşsınız</p>
+          <button onClick={() => { onRemoveFriend(user.id); onClose(); }}
+            className="w-full py-1.5 rounded-xl text-xs font-medium transition-all text-left px-2"
+            style={{ background: 'rgba(239,68,68,0.08)', color: '#f87171' }}>
+            👤 Arkadaşlıktan Çıkar
+          </button>
         ) : isPending ? (
           <p className="text-xs text-gray-500 py-1">İstek Gönderildi</p>
         ) : (
@@ -275,6 +280,10 @@ export default function ChatPage() {
     socket.on('friend:request', () => qc.invalidateQueries({ queryKey: ['chat-requests'] }));
     socket.on('friend:accepted', () => { qc.invalidateQueries({ queryKey: ['chat-friends'] }); qc.invalidateQueries({ queryKey: ['chat-requests'] }); });
     socket.on('friend:sent', () => { qc.invalidateQueries({ queryKey: ['chat-friends'] }); qc.invalidateQueries({ queryKey: ['chat-requests'] }); });
+    socket.on('friend:removed', ({ friendId }: { friendId: string }) => {
+      qc.invalidateQueries({ queryKey: ['chat-friends'] });
+      setActiveDM((curr) => { if (curr?.id === friendId) { setTab('public'); return null; } return curr; });
+    });
 
     return () => {
       socket.off('users:online');
@@ -286,6 +295,7 @@ export default function ChatPage() {
       socket.off('friend:request');
       socket.off('friend:accepted');
       socket.off('friend:sent');
+      socket.off('friend:removed');
     };
   }, [socket, user?.id, qc, refetchMods]);
 
@@ -297,6 +307,11 @@ export default function ChatPage() {
     setTimeout(() => inputRef.current?.focus(), 0);
   }, [input, socket, connected, tab, activeDM]);
 
+  function removeFriend(friendId: string) {
+    socket?.emit('friend:remove', { friendId });
+    qc.invalidateQueries({ queryKey: ['chat-friends'] });
+    if (activeDM?.id === friendId) { setActiveDM(null); setTab('public'); }
+  }
   function deleteOwnMsg(messageId: string) { socket?.emit('msg:delete_own', { messageId }); }
   function deleteMsgAsAdmin(messageId: string) { socket?.emit('admin:delete_msg', { messageId }); }
   function clearChat() { if (confirm('Tüm sohbet mesajları silinecek. Emin misin?')) socket?.emit('admin:clear_chat'); }
@@ -608,7 +623,7 @@ export default function ChatPage() {
           user={popup.user} pos={popup.pos} meId={user?.id ?? ''}
           meIsAdmin={isAdmin} meIsMod={isMod}
           friends={friends as Friend[]} sentIds={sentRequestIds} modIds={modIds}
-          onRequest={sendFriendRequest} onClose={() => setPopup(null)}
+          onRequest={sendFriendRequest} onRemoveFriend={removeFriend} onClose={() => setPopup(null)}
           onSetMod={setMod} onBanTarget={(u) => setBanTarget(u)}
         />
       )}

@@ -343,6 +343,16 @@ export async function rejectFriendRequest(friendshipId: string, userId: string) 
   );
 }
 
+export async function removeFriend(userId: string, friendId: string) {
+  await query(
+    `DELETE FROM friendships
+     WHERE status = 'accepted'
+       AND ((requester_id = $1 AND addressee_id = $2)
+         OR (requester_id = $2 AND addressee_id = $1))`,
+    [userId, friendId]
+  );
+}
+
 export async function areFriends(userA: string, userB: string): Promise<boolean> {
   const rows = await query<{ id: string }>(
     `SELECT id FROM friendships

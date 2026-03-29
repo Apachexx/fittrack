@@ -1,5 +1,4 @@
-import MuscleMap from './MuscleMap';
-import { getMuscles } from '@/data/exerciseMuscles';
+import BodyMap from '@/components/ui/BodyMap';
 
 const EQUIPMENT_LABELS: Record<string, string> = {
   barbell: 'Barbell',
@@ -26,7 +25,6 @@ interface Props {
 }
 
 export default function ExerciseModal({ exercise, onClose }: Props) {
-  const { primary, secondary } = getMuscles(exercise.name);
 
   return (
     <div
@@ -69,7 +67,7 @@ export default function ExerciseModal({ exercise, onClose }: Props) {
           </div>
         </div>
 
-        <MuscleMap primaryMuscles={primary} secondaryMuscles={secondary} />
+        <BodyMap exerciseName={exercise.name} muscleGroup={exercise.muscleGroup} />
       </div>
     </div>
   );

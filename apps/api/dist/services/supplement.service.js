@@ -100,9 +100,9 @@ async function getSupplementsDueForNotification() {
     WHERE us.is_active = TRUE
       AND us.schedule_time IS NOT NULL
       AND (us.last_notified IS NULL OR us.last_notified < CURRENT_DATE)
-      AND (us.schedule_time AT TIME ZONE 'UTC')
-            BETWEEN (NOW() AT TIME ZONE 'UTC')::time
-                AND ((NOW() + INTERVAL '3 minutes') AT TIME ZONE 'UTC')::time
+      AND us.schedule_time
+            BETWEEN (NOW() AT TIME ZONE 'Europe/Istanbul')::time
+                AND ((NOW() + INTERVAL '3 minutes') AT TIME ZONE 'Europe/Istanbul')::time
   `);
     return rows;
 }

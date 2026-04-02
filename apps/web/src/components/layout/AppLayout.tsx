@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +6,11 @@ import { programApi } from '@/api/program.api';
 import { cn } from '@/utils/cn';
 import { useSupplementAlerts } from '@/hooks/useSupplementAlerts';
 
+const LazyChatPage = lazy(() => import('@/pages/Chat/ChatPage'));
+
+// ── Nav items ─────────────────────────────────────────────────────────────────
+// Mobile shows: Dashboard, Workouts, Nutrition, Supplements, Profile (5 max)
+// desktopOnly items only appear in the sidebar
 const navItems = [
   {
     to: '/',
@@ -48,6 +53,7 @@ const navItems = [
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
+    desktopOnly: true,
   },
   {
     to: '/programs',
@@ -59,6 +65,7 @@ const navItems = [
         <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" strokeLinecap="round" strokeWidth={2.5} />
       </svg>
     ),
+    desktopOnly: true,
   },
   {
     to: '/supplements',
@@ -94,12 +101,74 @@ const navItems = [
   },
 ];
 
+// ── Chat Drawer ───────────────────────────────────────────────────────────────
+function ChatDrawer({ open, onClose, everOpened }: { open: boolean; onClose: () => void; everOpened: boolean }) {
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 transition-opacity duration-300 lg:hidden"
+        style={{
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+        }}
+        onClick={onClose}
+      />
+      {/* Slide-in panel */}
+      <div
+        className="fixed inset-y-0 right-0 z-50 w-full lg:hidden flex flex-col"
+        style={{
+          background: '#080C14',
+          transform: open ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          maxWidth: '480px',
+        }}
+      >
+        {/* Drawer header */}
+        <div
+          className="flex items-center justify-between px-4 h-14 shrink-0"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <p className="text-base font-bold text-white">Sohbet</p>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-white transition-all"
+            style={{ background: 'rgba(255,255,255,0.06)' }}
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Chat content */}
+        <div className="flex-1 overflow-hidden">
+          {everOpened && (
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-full">
+                <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            }>
+              <LazyChatPage />
+            </Suspense>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Main layout ───────────────────────────────────────────────────────────────
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { alerts: supplementAlerts } = useSupplementAlerts();
   const [dismissedAlert, setDismissedAlert] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatEverOpened, setChatEverOpened] = useState(false);
 
   const { data: activeProgram } = useQuery({
     queryKey: ['active-program'],
@@ -111,9 +180,16 @@ export default function AppLayout() {
     navigate('/login');
   }
 
+  function openChat() {
+    setChatEverOpened(true);
+    setChatOpen(true);
+  }
+
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
     : '?';
+
+  const mobileNavItems = navItems.filter((item) => !(item as { desktopOnly?: boolean }).desktopOnly);
 
   return (
     <div className="min-h-screen flex" style={{ background: '#080C14' }}>
@@ -133,8 +209,6 @@ export default function AppLayout() {
           backdropFilter: 'blur(24px)',
           borderRight: '1px solid rgba(255,255,255,0.05)',
         }}>
-
-        {/* Logo */}
         <div className="px-5 h-16 flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
             style={{ background: 'linear-gradient(135deg, #f97316 0%, #e11d48 100%)', boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }}>
@@ -145,7 +219,6 @@ export default function AppLayout() {
 
         <div className="mx-4 mb-2" style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
 
-        {/* Active program mini-bar */}
         {activeProgram && (
           <div className="mx-3 mb-2 px-3 py-2 rounded-xl"
             style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)' }}>
@@ -158,13 +231,11 @@ export default function AppLayout() {
           </div>
         )}
 
-        {/* Navigation */}
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = item.to === '/'
               ? location.pathname === '/'
               : location.pathname.startsWith(item.to);
-
             return (
               <NavLink
                 key={item.to}
@@ -180,19 +251,15 @@ export default function AppLayout() {
                   {item.icon(isActive)}
                 </span>
                 {item.label}
-                {isActive && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400 opacity-70 shrink-0" />
-                )}
+                {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-400 opacity-70 shrink-0" />}
               </NavLink>
             );
           })}
         </nav>
 
-        {/* Bottom: user */}
         <div className="p-3 mt-auto">
           <div className="mx-1 mb-3" style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: 'rgba(255,255,255,0.03)' }}>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
               style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.3), rgba(244,63,94,0.3))', color: '#fb923c', border: '1px solid rgba(249,115,22,0.2)' }}>
               {initials}
@@ -216,93 +283,103 @@ export default function AppLayout() {
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 lg:ml-[230px] relative z-10 pb-20 lg:pb-0">
-        {/* Desktop supplement alert banner */}
+      {/* Main content */}
+      <main className="flex-1 lg:ml-[230px] relative z-10 pb-16 lg:pb-0">
+        {/* Supplement alert banner */}
         {supplementAlerts.length > 0 && !dismissedAlert && location.pathname !== '/supplements' && (
           <div
-            className="sticky top-0 z-30 mx-4 md:mx-8 mt-4 flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+            className="sticky top-0 z-30 mx-3 mt-3 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl"
             style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.3)' }}
           >
-            <div className="flex items-center gap-2">
-              <span className="text-lg">💊</span>
-              <div>
-                <p className="text-sm font-semibold text-orange-300">
-                  {supplementAlerts.length === 1
-                    ? `${supplementAlerts[0].name_tr} alma vakti!`
-                    : `${supplementAlerts.length} supplement alma vakti yaklaşıyor`}
-                </p>
-                <p className="text-xs text-orange-500/70">
-                  {supplementAlerts.map((a) => a.name_tr).join(', ')}
-                </p>
-              </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="shrink-0">💊</span>
+              <p className="text-sm font-semibold text-orange-300 truncate">
+                {supplementAlerts.length === 1
+                  ? `${supplementAlerts[0].name_tr} alma vakti!`
+                  : `${supplementAlerts.length} supplement zamanı yaklaşıyor`}
+              </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => navigate('/supplements')}
-                className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                className="text-xs px-2.5 py-1 rounded-lg font-medium"
                 style={{ background: 'rgba(249,115,22,0.25)', color: '#fb923c' }}
               >
                 Görüntüle
               </button>
-              <button
-                onClick={() => setDismissedAlert(true)}
-                className="text-gray-500 hover:text-gray-300 transition-all text-lg leading-none"
-              >
-                ×
-              </button>
+              <button onClick={() => setDismissedAlert(true)} className="text-gray-500 hover:text-gray-300 text-xl leading-none px-1">×</button>
             </div>
           </div>
         )}
 
-        <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-8">
+        <div className="max-w-5xl mx-auto px-3 py-4 lg:px-8 lg:py-8">
           <Outlet />
         </div>
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 lg:hidden"
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-20 lg:hidden"
         style={{
-          background: 'rgba(5,8,14,0.95)',
-          backdropFilter: 'blur(24px)',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          background: 'rgba(5,8,14,0.97)',
+          backdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
           paddingBottom: 'env(safe-area-inset-bottom)',
-        }}>
-        <div className="flex items-center justify-around px-2 py-2">
-          {navItems.filter((item) => !(item as { desktopOnly?: boolean }).desktopOnly).map((item) => {
+        }}
+      >
+        <div className="flex items-center justify-around px-1 py-1">
+          {/* Regular nav items */}
+          {mobileNavItems.map((item) => {
             const isActive = item.to === '/'
               ? location.pathname === '/'
               : location.pathname.startsWith(item.to);
-
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/'}
-                className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-xl transition-all min-w-0"
+                className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all"
                 style={isActive ? { color: '#f97316' } : { color: '#4b5563' }}
               >
                 {item.icon(isActive)}
-                <span className="text-[10px] font-medium truncate max-w-[52px] text-center leading-tight">
-                  {item.label}
-                </span>
+                <span className="text-[9px] font-medium leading-tight">{item.label}</span>
               </NavLink>
             );
           })}
-          {/* Profile / Settings */}
+
+          {/* Chat button → opens drawer */}
+          <button
+            onClick={openChat}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all"
+            style={{ color: chatOpen ? '#f97316' : '#4b5563' }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-[9px] font-medium leading-tight">Sohbet</span>
+          </button>
+
+          {/* Profile */}
           <NavLink
             to="/settings"
-            className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-xl transition-all min-w-0"
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all"
             style={location.pathname === '/settings' ? { color: '#f97316' } : { color: '#4b5563' }}
           >
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
-              style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.4), rgba(244,63,94,0.4))', color: '#fb923c' }}>
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+              style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.5), rgba(244,63,94,0.5))', color: '#fb923c' }}>
               {initials}
             </div>
-            <span className="text-[10px] font-medium leading-tight">Profil</span>
+            <span className="text-[9px] font-medium leading-tight">Profil</span>
           </NavLink>
         </div>
       </nav>
+
+      {/* Chat Drawer (mobile) */}
+      <ChatDrawer
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        everOpened={chatEverOpened}
+      />
     </div>
   );
 }

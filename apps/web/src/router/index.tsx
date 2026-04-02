@@ -16,6 +16,7 @@ import ProgramCreatePage from '@/pages/Programs/ProgramCreatePage';
 import CommunityProgramsPage from '@/pages/Programs/CommunityProgramsPage';
 import SettingsPage from '@/pages/Settings/SettingsPage';
 import ChatPage from '@/pages/Chat/ChatPage';
+import SupplementsPage from '@/pages/Supplements/SupplementsPage';
 
 function ProtectedRoute() {
   const { isAuthenticated } = useAuth();
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
           { path: '/workouts/new', element: <WorkoutSessionPage /> },
           { path: '/workouts/:id', element: <WorkoutDetailPage /> },
           { path: '/nutrition', element: <NutritionDashboard /> },
+          { path: '/supplements', element: <SupplementsPage /> },
           { path: '/progress', element: <ProgressPage /> },
           { path: '/programs', element: <ProgramListPage /> },
           { path: '/programs/create', element: <ProgramCreatePage /> },

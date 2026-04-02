@@ -18,6 +18,8 @@ const program_routes_1 = __importDefault(require("./routes/program.routes"));
 const progress_routes_1 = __importDefault(require("./routes/progress.routes"));
 const chat_routes_1 = __importDefault(require("./routes/chat.routes"));
 const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
+const supplement_routes_1 = __importDefault(require("./routes/supplement.routes"));
+const supplementReminder_1 = require("./jobs/supplementReminder");
 const error_1 = require("./middleware/error");
 const socket_1 = require("./socket");
 const db_1 = __importDefault(require("./db"));
@@ -52,6 +54,7 @@ app.use('/api/programs', program_routes_1.default);
 app.use('/api/progress', progress_routes_1.default);
 app.use('/api/chat', chat_routes_1.default);
 app.use('/api/settings', settings_routes_1.default);
+app.use('/api/supplements', supplement_routes_1.default);
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString(), v: '6484636' });
@@ -91,6 +94,7 @@ async function runMigrations() {
 const PORT = process.env.PORT || 3001;
 runMigrations()
     .then(() => {
+    (0, supplementReminder_1.startSupplementReminderJob)();
     httpServer.listen(PORT, () => {
         console.log(`🚀 FitTrack API çalışıyor: http://localhost:${PORT}`);
     });

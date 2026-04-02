@@ -14,6 +14,8 @@ import programRoutes from './routes/program.routes';
 import progressRoutes from './routes/progress.routes';
 import chatRoutes from './routes/chat.routes';
 import settingsRoutes from './routes/settings.routes';
+import supplementRoutes from './routes/supplement.routes';
+import { startSupplementReminderJob } from './jobs/supplementReminder';
 import { errorHandler } from './middleware/error';
 import { attachSocketServer } from './socket';
 import pool from './db';
@@ -55,6 +57,7 @@ app.use('/api/programs', programRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/supplements', supplementRoutes);
 
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
@@ -105,6 +108,7 @@ const PORT = process.env.PORT || 3001;
 
 runMigrations()
   .then(() => {
+    startSupplementReminderJob();
     httpServer.listen(PORT, () => {
       console.log(`🚀 FitTrack API çalışıyor: http://localhost:${PORT}`);
     });

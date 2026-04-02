@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { programApi } from '@/api/program.api';
 import { cn } from '@/utils/cn';
+import { useSupplementAlerts } from '@/hooks/useSupplementAlerts';
 
 const navItems = [
   {
@@ -59,6 +61,17 @@ const navItems = [
     ),
   },
   {
+    to: '/supplements',
+    label: 'Supplement',
+    icon: (active: boolean) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.8} className="w-5 h-5">
+        <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-4 4 4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" strokeLinecap="round" />
+        <path d="M8 14v4a4 4 0 0 0 4 4 4 4 0 0 0 4-4v-4" strokeLinecap="round" />
+        <path d="M8 17h8" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     to: '/chat',
     label: 'Sohbet',
     icon: (active: boolean) => (
@@ -84,6 +97,8 @@ export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { alerts: supplementAlerts } = useSupplementAlerts();
+  const [dismissedAlert, setDismissedAlert] = useState(false);
 
   const { data: activeProgram } = useQuery({
     queryKey: ['active-program'],
@@ -202,6 +217,43 @@ export default function AppLayout() {
 
       {/* Main */}
       <main className="flex-1 md:ml-[230px] relative z-10 pb-20 md:pb-0">
+        {/* Desktop supplement alert banner */}
+        {supplementAlerts.length > 0 && !dismissedAlert && location.pathname !== '/supplements' && (
+          <div
+            className="sticky top-0 z-30 mx-4 md:mx-8 mt-4 flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+            style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.3)' }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💊</span>
+              <div>
+                <p className="text-sm font-semibold text-orange-300">
+                  {supplementAlerts.length === 1
+                    ? `${supplementAlerts[0].name_tr} alma vakti!`
+                    : `${supplementAlerts.length} supplement alma vakti yaklaşıyor`}
+                </p>
+                <p className="text-xs text-orange-500/70">
+                  {supplementAlerts.map((a) => a.name_tr).join(', ')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/supplements')}
+                className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                style={{ background: 'rgba(249,115,22,0.25)', color: '#fb923c' }}
+              >
+                Görüntüle
+              </button>
+              <button
+                onClick={() => setDismissedAlert(true)}
+                className="text-gray-500 hover:text-gray-300 transition-all text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-8">
           <Outlet />
         </div>

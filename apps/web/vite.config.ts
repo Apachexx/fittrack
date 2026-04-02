@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'FitTrack — Fitness & Sağlık Takibi',
-        short_name: 'FitTrack',
-        description: 'Antrenman, beslenme ve ilerleme takibi',
+        name: 'Vücut Geliştirme ve Sağlık',
+        short_name: 'V&S',
+        description: 'Vücut geliştirme, beslenme ve sağlık takibi',
         theme_color: '#080C14',
         background_color: '#080C14',
         display: 'standalone',

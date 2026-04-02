@@ -31,7 +31,7 @@ self.addEventListener('push', (event) => {
     url?: string;
   } | undefined;
 
-  const title = data?.title ?? 'FitTrack';
+  const title = data?.title ?? 'V&S';
   const body = data?.body ?? 'Supplement zamanı!';
   const url = data?.url ?? '/supplements';
 

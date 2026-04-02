@@ -1,42 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <!-- Background gradient -->
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#0d1622"/>
       <stop offset="100%" stop-color="#080c14"/>
     </linearGradient>
-
-    <!-- Flame gradient: bright amber top → deep orange → rose bottom -->
-    <linearGradient id="flameGrad" x1="0.3" y1="0" x2="0.7" y2="1">
-      <stop offset="0%"   stop-color="#fde68a"/>
-      <stop offset="28%"  stop-color="#fb923c"/>
-      <stop offset="68%"  stop-color="#f97316"/>
-      <stop offset="100%" stop-color="#f43f5e"/>
+    <linearGradient id="body" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#fbbf24"/>
+      <stop offset="30%"  stop-color="#fb923c"/>
+      <stop offset="70%"  stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#ea580c"/>
     </linearGradient>
-
-    <!-- Bright inner core -->
-    <linearGradient id="coreGrad" x1="0.4" y1="0" x2="0.6" y2="1">
-      <stop offset="0%"   stop-color="#fff7ed" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#fdba74" stop-opacity="0.08"/>
-    </linearGradient>
-
-    <!-- Ambient background glow -->
-    <radialGradient id="ambient" cx="50%" cy="62%" r="42%">
-      <stop offset="0%"   stop-color="#f97316" stop-opacity="0.22"/>
+    <radialGradient id="ambient" cx="50%" cy="55%" r="45%">
+      <stop offset="0%"   stop-color="#f97316" stop-opacity="0.25"/>
       <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
     </radialGradient>
-
-    <!-- Glow filter for flame -->
-    <filter id="glowF" x="-45%" y="-35%" width="190%" height="170%">
-      <feGaussianBlur stdDeviation="22" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    <filter id="glow" x="-40%" y="-30%" width="180%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-
-    <!-- Clip to rounded rect so glow doesn't bleed outside -->
-    <clipPath id="iconClip">
+    <clipPath id="clip">
       <rect width="512" height="512" rx="112"/>
     </clipPath>
   </defs>
@@ -45,54 +27,63 @@
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
   <rect width="512" height="512" rx="112" fill="url(#ambient)"/>
 
-  <g clip-path="url(#iconClip)">
+  <g clip-path="url(#clip)">
 
-    <!-- FLAME — organic teardrop with pointed tip -->
+    <!-- HEAD -->
+    <circle cx="256" cy="86" r="32" fill="url(#body)" filter="url(#glow)"/>
+
+    <!-- BACK SILHOUETTE
+         Narrow neck → wide traps → dramatic lat flare → narrow waist
+         Width: neck~60 → shoulders~330 → lats~390 → waist~190 px -->
     <path
-      d="M256 88
-         C289 126, 354 182, 360 254
-         C366 314, 338 358, 317 382
-         C296 406, 275 418, 256 420
-         C237 418, 216 406, 195 382
-         C174 358, 146 314, 152 254
-         C158 182, 223 126, 256 88Z"
-      fill="url(#flameGrad)"
-      filter="url(#glowF)"
+      d="M 228 118
+         C 170 124, 104 152, 80 180
+         C 62 202, 58 238, 58 268
+         C 58 294, 64 322, 86 350
+         C 108 374, 142 390, 170 398
+         C 200 406, 230 410, 256 411
+         C 282 410, 312 406, 342 398
+         C 370 390, 404 374, 426 350
+         C 448 322, 454 294, 454 268
+         C 454 238, 450 202, 432 180
+         C 408 152, 342 124, 284 118
+         Z"
+      fill="url(#body)"
+      filter="url(#glow)"
     />
 
-    <!-- Inner luminous core -->
-    <path
-      d="M256 145
-         C271 172, 302 204, 306 248
-         C310 282, 294 310, 282 327
-         C271 342, 262 350, 256 352
-         C250 350, 241 342, 230 327
-         C218 310, 202 282, 206 248
-         C210 204, 241 172, 256 145Z"
-      fill="url(#coreGrad)"
-    />
+    <!-- MUSCLE DETAILS — white lines, low opacity -->
 
-    <!-- ECG / pulse line cutting through the flame -->
-    <path
-      d="M136 300
-         L192 300
-         L213 268
-         L229 338
-         L246 240
-         L263 338
-         L280 268
-         L299 300
-         L376 300"
-      fill="none"
-      stroke="white"
-      stroke-width="16"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      opacity="0.92"
-    />
+    <!-- Spine line -->
+    <path d="M 256 128 Q 254 250, 256 396"
+      fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="5" stroke-linecap="round"/>
 
-    <!-- Accent dot at ECG peak -->
-    <circle cx="246" cy="240" r="9" fill="white" opacity="0.75"/>
+    <!-- Left trapezius ridge -->
+    <path d="M 238 124 Q 186 148, 148 178"
+      fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="5" stroke-linecap="round"/>
+    <!-- Right trapezius ridge -->
+    <path d="M 274 124 Q 326 148, 364 178"
+      fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- Left lat ridge -->
+    <path d="M 112 226 Q 68 278, 96 340"
+      fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="4" stroke-linecap="round"/>
+    <!-- Right lat ridge -->
+    <path d="M 400 226 Q 444 278, 416 340"
+      fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Left erector (spine muscle) -->
+    <path d="M 242 168 Q 238 280, 240 378"
+      fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4" stroke-linecap="round"/>
+    <!-- Right erector -->
+    <path d="M 270 168 Q 274 280, 272 378"
+      fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Lower back / V taper lines -->
+    <path d="M 190 368 Q 220 390, 256 396"
+      fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 322 368 Q 292 390, 256 396"
+      fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4" stroke-linecap="round"/>
 
   </g>
 </svg>

@@ -110,13 +110,13 @@ runMigrations()
   .then(() => {
     startSupplementReminderJob();
     httpServer.listen(PORT, () => {
-      console.log(`🚀 FitTrack API çalışıyor: http://localhost:${PORT}`);
+      console.log(`🚀 V&S API çalışıyor: http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
     console.error('Migration hatası, server yine de başlatılıyor:', err);
     httpServer.listen(PORT, () => {
-      console.log(`🚀 FitTrack API çalışıyor: http://localhost:${PORT}`);
+      console.log(`🚀 V&S API çalışıyor: http://localhost:${PORT}`);
     });
   });
 

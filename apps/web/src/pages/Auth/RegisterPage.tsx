@@ -46,11 +46,12 @@ export default function RegisterPage() {
 
         <div className="relative z-10 w-full max-w-xs">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl"
-              style={{ background: 'linear-gradient(135deg, #f97316, #e11d48)', boxShadow: '0 8px 32px rgba(249,115,22,0.4)' }}>
-              ⚡
+            <img src="/icon.svg" alt="logo" className="w-10 h-10 rounded-2xl"
+              style={{ boxShadow: '0 8px 32px rgba(249,115,22,0.4)' }} />
+            <div>
+              <p className="font-bold text-sm text-white leading-tight">Vücut Geliştirme</p>
+              <p className="text-xs font-semibold text-orange-400">ve Sağlık</p>
             </div>
-            <span className="font-bold text-xl text-white">FitTrack</span>
           </div>
 
           <h2 className="text-3xl font-bold text-white mb-2">Her şey dahil.</h2>
@@ -75,9 +76,8 @@ export default function RegisterPage() {
         <div className="w-full max-w-sm relative z-10">
           <div className="mb-8">
             <div className="flex items-center gap-2.5 mb-6 lg:hidden">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm"
-                style={{ background: 'linear-gradient(135deg, #f97316, #e11d48)' }}>⚡</div>
-              <span className="font-bold text-white">FitTrack</span>
+              <img src="/icon.svg" alt="logo" className="w-8 h-8 rounded-xl" />
+              <span className="font-bold text-white">V&S</span>
             </div>
             <h2 className="text-2xl font-bold text-white">Hesap oluşturun</h2>
             <p className="text-gray-500 mt-1 text-sm">Ücretsiz, kredi kartı gerekmez</p>

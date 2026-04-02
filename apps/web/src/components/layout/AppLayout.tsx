@@ -204,10 +204,12 @@ export default function AppLayout() {
       {/* ── Desktop Sidebar ── */}
       <aside className="fixed inset-y-0 left-0 w-[230px] flex-col z-20 hidden lg:flex"
         style={{ background: 'rgba(5,8,14,0.92)', backdropFilter: 'blur(24px)', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="px-5 h-16 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
-            style={{ background: 'linear-gradient(135deg, #f97316 0%, #e11d48 100%)', boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }}>⚡</div>
-          <span className="font-bold text-base tracking-tight text-white">FitTrack</span>
+        <div className="px-4 h-16 flex items-center gap-3">
+          <img src="/icon.svg" className="w-9 h-9 rounded-xl shrink-0" style={{ boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }} alt="logo" />
+          <div className="min-w-0">
+            <p className="font-bold text-[13px] text-white leading-tight">Vücut Geliştirme</p>
+            <p className="text-[11px] font-semibold text-orange-400 leading-tight">ve Sağlık</p>
+          </div>
         </div>
         <div className="mx-4 mb-2" style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
         {activeProgram && (
@@ -256,6 +258,32 @@ export default function AppLayout() {
 
       {/* ── Main ── */}
       <main className="flex-1 lg:ml-[230px] relative z-10 pb-14 lg:pb-0 min-h-[100dvh]">
+
+        {/* ── Mobile Header ── */}
+        <header className="lg:hidden sticky top-0 z-20 flex items-center justify-between px-4"
+          style={{
+            height: 'calc(52px + env(safe-area-inset-top, 0px))',
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            background: 'rgba(5,8,14,0.95)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
+          }}>
+          <div className="flex items-center gap-2.5">
+            <img src="/icon.svg" alt="logo" className="w-9 h-9 rounded-xl shrink-0"
+              style={{ boxShadow: '0 2px 12px rgba(249,115,22,0.4)' }} />
+            <div>
+              <p className="text-sm font-bold text-white leading-none">V&S</p>
+              <p className="text-[10px] text-gray-500 leading-tight mt-0.5">Vücut & Sağlık</p>
+            </div>
+          </div>
+          <NavLink to="/settings"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+            style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.3), rgba(244,63,94,0.3))', color: '#fb923c', border: '1px solid rgba(249,115,22,0.2)' }}>
+            {initials}
+          </NavLink>
+        </header>
+
         {/* Supplement alert */}
         {supplementAlerts.length > 0 && !dismissedAlert && location.pathname !== '/supplements' && (
           <div className="sticky top-0 z-30 mx-3 mt-2 flex items-center justify-between gap-2 px-3 py-2 rounded-xl"
@@ -275,7 +303,7 @@ export default function AppLayout() {
 
         <div
           className="max-w-5xl mx-auto w-full px-3 pb-4 lg:px-8 lg:py-8"
-          style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}
+          style={{ paddingTop: '12px' }}
         >
           <Outlet />
         </div>

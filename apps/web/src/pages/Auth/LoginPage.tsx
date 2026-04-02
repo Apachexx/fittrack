@@ -42,11 +42,10 @@ export default function LoginPage() {
 
         {/* Content */}
         <div className="relative z-10 text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center text-2xl"
-            style={{ background: 'linear-gradient(135deg, #f97316, #e11d48)', boxShadow: '0 8px 32px rgba(249,115,22,0.4)' }}>
-            ⚡
-          </div>
-          <h1 className="text-4xl font-bold text-white mb-3">FitTrack</h1>
+          <img src="/icon.svg" alt="logo" className="w-16 h-16 rounded-2xl mx-auto mb-4"
+            style={{ boxShadow: '0 8px 32px rgba(249,115,22,0.4)' }} />
+          <h1 className="text-2xl font-bold text-white mb-1">Vücut Geliştirme</h1>
+          <p className="text-lg font-semibold text-orange-400 mb-3">ve Sağlık</p>
           <p className="text-gray-400 leading-relaxed">
             Antrenmanlarını takip et, beslenmeni yönet ve hedeflerine ulaş.
           </p>
@@ -77,11 +76,9 @@ export default function LoginPage() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-2.5 mb-6 lg:hidden">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm"
-                style={{ background: 'linear-gradient(135deg, #f97316, #e11d48)', boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }}>
-                ⚡
-              </div>
-              <span className="font-bold text-white">FitTrack</span>
+              <img src="/icon.svg" alt="logo" className="w-8 h-8 rounded-xl"
+                style={{ boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }} />
+              <span className="font-bold text-white">V&S</span>
             </div>
             <h2 className="text-2xl font-bold text-white">Tekrar hoş geldiniz</h2>
             <p className="text-gray-500 mt-1 text-sm">Hesabınıza giriş yapın</p>

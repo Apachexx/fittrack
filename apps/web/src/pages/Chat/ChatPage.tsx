@@ -632,7 +632,7 @@ export default function ChatPage() {
       <div className="flex items-center justify-between mb-2 shrink-0">
         <div>
           <h1 className="text-lg font-bold text-white leading-tight">Sohbet</h1>
-          <p className="text-xs text-gray-500">FitTrack Topluluğu{(isAdmin || isMod) && <span className="ml-2 text-orange-400">{isAdmin ? '· ADMİN' : '· MOD'}</span>}</p>
+          <p className="text-xs text-gray-500">V&S Topluluğu{(isAdmin || isMod) && <span className="ml-2 text-orange-400">{isAdmin ? '· ADMİN' : '· MOD'}</span>}</p>
         </div>
         <div className="flex gap-1">
           {[

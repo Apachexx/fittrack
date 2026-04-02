@@ -57,7 +57,7 @@ app.use('/api/settings', settings_routes_1.default);
 app.use('/api/supplements', supplement_routes_1.default);
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString(), v: '6484636' });
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), v: '7000000' });
 });
 // Hata işleyici
 app.use(error_1.errorHandler);

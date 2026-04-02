@@ -334,7 +334,7 @@ export default function ChatPage() {
 
   /* ── Sidebar ── */
   const sidebarEl = (
-    <div className="w-52 shrink-0 flex flex-col gap-3 h-full overflow-y-auto">
+    <div className="w-28 sm:w-52 shrink-0 flex flex-col gap-2 sm:gap-3 h-full overflow-y-auto overflow-x-hidden">
       <div className="flex items-center gap-2 px-1">
         <div className={`w-2 h-2 rounded-full shrink-0 ${connected ? 'bg-green-400' : 'bg-yellow-500 animate-pulse'}`} />
         <span className="text-xs text-gray-500">{connected ? `${onlineUsers.map(u=>u.id).length} çevrimiçi` : 'Bağlanıyor...'}</span>
@@ -616,7 +616,7 @@ export default function ChatPage() {
   );
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 100px)', maxHeight: 760 }}>
+    <div className="flex flex-col" style={{ height: '100%', maxHeight: '100%' }}>
       {banTarget && <BanModal user={banTarget} meIsAdmin={isAdmin} onClose={() => setBanTarget(null)} onBan={doBan} />}
       {popup && (
         <UserPopup
@@ -629,9 +629,9 @@ export default function ChatPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 shrink-0">
+      <div className="flex items-center justify-between mb-2 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-white">Sohbet</h1>
+          <h1 className="text-lg font-bold text-white leading-tight">Sohbet</h1>
           <p className="text-xs text-gray-500">FitTrack Topluluğu{(isAdmin || isMod) && <span className="ml-2 text-orange-400">{isAdmin ? '· ADMİN' : '· MOD'}</span>}</p>
         </div>
         <div className="flex gap-1">
@@ -651,7 +651,7 @@ export default function ChatPage() {
         </div>
       </div>
 
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex gap-2 flex-1 min-h-0">
         {tab !== 'admin' && sidebarEl}
 
         <div className="flex-1 flex flex-col card overflow-hidden min-w-0">

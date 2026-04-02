@@ -141,8 +141,8 @@ function ChatDrawer({ open, onClose, everOpened }: { open: boolean; onClose: () 
           <p className="text-base font-bold text-white">Sohbet</p>
         </div>
 
-        {/* Chat content */}
-        <div className="flex-1 overflow-hidden">
+        {/* Chat content — px-3 py-3 matches page layout */}
+        <div className="flex-1 overflow-hidden px-3 py-2" style={{ minHeight: 0 }}>
           {everOpened && (
             <Suspense fallback={
               <div className="flex items-center justify-center h-full">

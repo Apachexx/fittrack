@@ -143,7 +143,7 @@ function ChatDrawer({ open, onClose, everOpened }: { open: boolean; onClose: () 
         </div>
 
         {/* Chat content — px-3 py-3 matches page layout */}
-        <div className="flex-1 overflow-hidden px-3 py-2" style={{ minHeight: 0 }}>
+        <div className="flex-1 overflow-hidden flex flex-col px-3 py-2" style={{ minHeight: 0 }}>
           {everOpened && (
             <Suspense fallback={
               <div className="flex items-center justify-center h-full">
@@ -257,7 +257,7 @@ export default function AppLayout() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="flex-1 lg:ml-[230px] relative z-10 pb-14 lg:pb-0 min-h-[100dvh]">
+      <main className="flex-1 lg:ml-[230px] relative z-10 pb-14 lg:pb-0 min-h-[100dvh] flex flex-col">
 
         {/* ── Mobile Header ── */}
         <header className="lg:hidden sticky top-0 z-20 flex items-center justify-between px-4"
@@ -302,7 +302,10 @@ export default function AppLayout() {
         )}
 
         <div
-          className="max-w-5xl mx-auto w-full px-3 pb-4 lg:px-8 lg:py-8"
+          className={cn(
+            'max-w-5xl mx-auto w-full px-3 pb-4 lg:px-8 lg:py-8',
+            location.pathname === '/chat' && 'flex-1 min-h-0 flex flex-col'
+          )}
           style={{ paddingTop: '12px' }}
         >
           <Outlet />

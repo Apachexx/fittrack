@@ -616,7 +616,7 @@ export default function ChatPage() {
   );
 
   return (
-    <div className="flex flex-col" style={{ height: '100%', maxHeight: '100%' }}>
+    <div className="flex flex-col flex-1 min-h-0" style={{ height: '100%' }}>
       {banTarget && <BanModal user={banTarget} meIsAdmin={isAdmin} onClose={() => setBanTarget(null)} onBan={doBan} />}
       {popup && (
         <UserPopup

@@ -117,7 +117,8 @@ function ChatDrawer({ open, onClose, everOpened }: { open: boolean; onClose: () 
           width: '100%',
           background: '#080C14',
           transform: open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1)',
+          transition: 'transform 0.25s cubic-bezier(0.32,0.72,0,1)',
+          willChange: 'transform',
         }}
       >
         {/* Header */}
@@ -272,7 +273,10 @@ export default function AppLayout() {
           </div>
         )}
 
-        <div className="max-w-5xl mx-auto w-full px-3 pt-3 pb-4 lg:px-8 lg:py-8">
+        <div
+          className="max-w-5xl mx-auto w-full px-3 pb-4 lg:px-8 lg:py-8"
+          style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}
+        >
           <Outlet />
         </div>
       </main>
@@ -302,12 +306,14 @@ export default function AppLayout() {
       {/* ── Mobile Bottom Nav ── */}
       <nav className="fixed bottom-0 left-0 right-0 z-20 lg:hidden"
         style={{
-          background: 'rgba(5,8,14,0.97)',
-          backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255,255,255,0.07)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          background: 'rgba(4,6,12,0.98)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          willChange: 'transform',
         }}>
-        <div className="flex items-center justify-around px-0.5 py-0.5">
+        <div className="flex items-center justify-around px-0.5 py-1">
           {mobileItems.map((item) => {
             const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
             return (

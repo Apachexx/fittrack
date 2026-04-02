@@ -190,7 +190,7 @@ export default function AppLayout() {
   const mobileItems = navItems.filter((i) => !(i as { desktopOnly?: boolean }).desktopOnly);
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#080C14' }}>
+    <div className="min-h-[100dvh] flex" style={{ background: 'transparent' }}>
 
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -254,7 +254,7 @@ export default function AppLayout() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="flex-1 lg:ml-[230px] relative z-10 pb-14 lg:pb-0">
+      <main className="flex-1 lg:ml-[230px] relative z-10 pb-14 lg:pb-0 min-h-[100dvh]">
         {/* Supplement alert */}
         {supplementAlerts.length > 0 && !dismissedAlert && location.pathname !== '/supplements' && (
           <div className="sticky top-0 z-30 mx-3 mt-2 flex items-center justify-between gap-2 px-3 py-2 rounded-xl"
@@ -272,7 +272,7 @@ export default function AppLayout() {
           </div>
         )}
 
-        <div className="max-w-5xl mx-auto px-3 pt-2 pb-2 lg:px-8 lg:py-8">
+        <div className="max-w-5xl mx-auto w-full px-3 pt-3 pb-4 lg:px-8 lg:py-8">
           <Outlet />
         </div>
       </main>

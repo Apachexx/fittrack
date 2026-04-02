@@ -127,7 +127,7 @@ export default function AppLayout() {
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-[230px] flex-col z-20 hidden md:flex"
+      <aside className="fixed inset-y-0 left-0 w-[230px] flex-col z-20 hidden lg:flex"
         style={{
           background: 'rgba(5,8,14,0.92)',
           backdropFilter: 'blur(24px)',
@@ -217,7 +217,7 @@ export default function AppLayout() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 md:ml-[230px] relative z-10 pb-20 md:pb-0">
+      <main className="flex-1 lg:ml-[230px] relative z-10 pb-20 lg:pb-0">
         {/* Desktop supplement alert banner */}
         {supplementAlerts.length > 0 && !dismissedAlert && location.pathname !== '/supplements' && (
           <div
@@ -261,7 +261,7 @@ export default function AppLayout() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 md:hidden"
+      <nav className="fixed bottom-0 left-0 right-0 z-20 lg:hidden"
         style={{
           background: 'rgba(5,8,14,0.95)',
           backdropFilter: 'blur(24px)',

@@ -281,26 +281,28 @@ export default function AppLayout() {
         </div>
       </main>
 
-      {/* ── Chat pull-tab (mobile only, right edge) ── */}
+      {/* ── Chat pull-tab (mobile only) ──
+           Positioned 8px from right edge to avoid Android's back-swipe zone (0-30px) */}
       <button
         onClick={openChat}
         className="fixed z-30 lg:hidden flex flex-col items-center justify-center gap-1"
         style={{
-          right: 0,
+          right: 8,
           top: '50%',
-          transform: 'translateY(-50%)',
-          width: 20,
-          height: 72,
-          background: 'rgba(249,115,22,0.85)',
-          borderRadius: '8px 0 0 8px',
-          boxShadow: '-2px 0 12px rgba(249,115,22,0.4)',
+          transform: 'translateY(-50%) translateZ(0)',
+          width: 28,
+          height: 80,
+          background: 'linear-gradient(180deg, rgba(249,115,22,0.9), rgba(234,88,12,0.9))',
+          borderRadius: 10,
+          boxShadow: '0 4px 20px rgba(249,115,22,0.5)',
+          willChange: 'transform',
         }}
         aria-label="Sohbeti Aç"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} style={{ width: 11, height: 11 }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.2} style={{ width: 13, height: 13 }}>
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <div style={{ width: 2, height: 18, background: 'rgba(255,255,255,0.5)', borderRadius: 1 }} />
+        <div style={{ width: 2, height: 22, background: 'rgba(255,255,255,0.45)', borderRadius: 1 }} />
       </button>
 
       {/* ── Mobile Bottom Nav ── */}

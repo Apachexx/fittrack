@@ -34,6 +34,8 @@
     /* Native-feeling touch */
     -webkit-tap-highlight-color: transparent;
     touch-action: pan-y;
+    /* Android: contain scroll within app, prevent pull-to-refresh */
+    overscroll-behavior-y: contain;
   }
 
   /* GPU-accelerated smooth scroll on all overflow containers */

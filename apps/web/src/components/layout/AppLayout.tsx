@@ -205,7 +205,7 @@ export default function AppLayout() {
       <aside className="fixed inset-y-0 left-0 w-[230px] flex-col z-20 hidden lg:flex"
         style={{ background: 'rgba(5,8,14,0.92)', backdropFilter: 'blur(24px)', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="px-4 h-16 flex items-center gap-3">
-          <img src="/icon.svg" className="w-9 h-9 rounded-xl shrink-0" style={{ boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }} alt="logo" />
+          <img src="/icon-192.png" className="w-9 h-9 rounded-xl shrink-0" style={{ boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }} alt="logo" />
           <div className="min-w-0">
             <p className="font-bold text-[13px] text-white leading-tight">Vücut Geliştirme</p>
             <p className="text-[11px] font-semibold text-orange-400 leading-tight">ve Sağlık</p>
@@ -270,7 +270,7 @@ export default function AppLayout() {
             borderBottom: '1px solid rgba(255,255,255,0.07)',
           }}>
           <div className="flex items-center gap-2.5">
-            <img src="/icon.svg" alt="logo" className="w-9 h-9 rounded-xl shrink-0"
+            <img src="/icon-192.png" alt="logo" className="w-9 h-9 rounded-xl shrink-0"
               style={{ boxShadow: '0 2px 12px rgba(249,115,22,0.4)' }} />
             <div>
               <p className="text-sm font-bold text-white leading-none">V&S</p>

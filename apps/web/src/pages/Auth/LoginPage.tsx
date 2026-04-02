@@ -42,7 +42,7 @@ export default function LoginPage() {
 
         {/* Content */}
         <div className="relative z-10 text-center max-w-sm">
-          <img src="/icon.svg" alt="logo" className="w-16 h-16 rounded-2xl mx-auto mb-4"
+          <img src="/icon-192.png" alt="logo" className="w-16 h-16 rounded-2xl mx-auto mb-4"
             style={{ boxShadow: '0 8px 32px rgba(249,115,22,0.4)' }} />
           <h1 className="text-2xl font-bold text-white mb-1">Vücut Geliştirme</h1>
           <p className="text-lg font-semibold text-orange-400 mb-3">ve Sağlık</p>
@@ -76,7 +76,7 @@ export default function LoginPage() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-2.5 mb-6 lg:hidden">
-              <img src="/icon.svg" alt="logo" className="w-8 h-8 rounded-xl"
+              <img src="/icon-192.png" alt="logo" className="w-8 h-8 rounded-xl"
                 style={{ boxShadow: '0 4px 16px rgba(249,115,22,0.4)' }} />
               <span className="font-bold text-white">V&S</span>
             </div>

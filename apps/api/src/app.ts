@@ -64,29 +64,39 @@ const dmStorage = multer.diskStorage({
 });
 const dmUpload = multer({
   storage: dmStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
   fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Sadece resim dosyaları kabul edilir.'));
+    // Accept any image/* or octet-stream (some mobile browsers send this)
+    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/octet-stream') {
+      cb(null, true);
+    } else {
+      cb(new Error(`Desteklenmeyen dosya türü: ${file.mimetype}`));
+    }
   },
 });
 
-// Protected image serving — only sender or receiver can access
-app.get('/api/dm-image/:filename', requireAuth, (req: any, res) => {
-  const filePath = path.join(uploadDir, req.params.filename);
+// Protected image serving
+app.get('/api/dm-image/:filename', requireAuth, (req: any, res: any) => {
+  const filename = path.basename(req.params.filename); // prevent path traversal
+  const filePath = path.join(uploadDir, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Bulunamadı' });
-  // Security headers to discourage saving
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Content-Disposition', 'inline');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.sendFile(filePath);
 });
 
-// Upload endpoint
-app.post('/api/chat/dm/upload', requireAuth, dmUpload.single('image'), (req: any, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
-  const url = `/api/dm-image/${req.file.filename}`;
-  res.json({ url });
+// Upload endpoint — inline multer error handling
+app.post('/api/chat/dm/upload', requireAuth, (req: any, res: any) => {
+  dmUpload.single('image')(req, res, (err: any) => {
+    if (err) {
+      console.error('multer error:', err.message);
+      return res.status(400).json({ error: err.message || 'Dosya yüklenemedi' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+    const url = `/api/dm-image/${req.file.filename}`;
+    res.json({ url });
+  });
 });
 
 // Rotalar

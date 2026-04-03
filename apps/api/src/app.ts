@@ -6,8 +6,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
-import multer from 'multer';
 import { requireAuth } from './middleware/auth';
+import { uploadDir } from './middleware/upload';
 
 import authRoutes from './routes/auth.routes';
 import workoutRoutes from './routes/workout.routes';
@@ -51,57 +51,15 @@ app.use('/api', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ── DM image upload ───────────────────────────────────────────────────────────
-const uploadDir = process.env.UPLOAD_DIR || '/tmp/dm-images';
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const dmStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
-  },
-});
-const dmUpload = multer({
-  storage: dmStorage,
-  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
-  fileFilter: (_req, file, cb) => {
-    // Accept any image/* or octet-stream (some mobile browsers send this)
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/octet-stream') {
-      cb(null, true);
-    } else {
-      cb(new Error(`Desteklenmeyen dosya türü: ${file.mimetype}`));
-    }
-  },
-});
-
-// Protected image serving
+// Protected image serving (auth required, no direct URL access)
 app.get('/api/dm-image/:filename', requireAuth, (req: any, res: any) => {
-  const filename = path.basename(req.params.filename); // prevent path traversal
+  const filename = path.basename(req.params.filename);
   const filePath = path.join(uploadDir, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Bulunamadı' });
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Content-Disposition', 'inline');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.sendFile(filePath);
-});
-
-// Upload endpoint — inline multer error handling
-app.post('/api/chat/dm/upload', requireAuth, (req: any, res: any) => {
-  console.log('[upload] hit, user:', req.user?.id, 'ct:', req.headers['content-type']);
-  dmUpload.single('image')(req, res, (err: any) => {
-    if (err) {
-      console.error('[upload] multer error:', err.message);
-      return res.status(400).json({ error: err.message || 'Dosya yüklenemedi' });
-    }
-    if (!req.file) {
-      console.error('[upload] no file in req');
-      return res.status(400).json({ error: 'Dosya bulunamadı' });
-    }
-    const url = `/api/dm-image/${req.file.filename}`;
-    console.log('[upload] success:', url);
-    res.json({ url });
-  });
 });
 
 // Rotalar

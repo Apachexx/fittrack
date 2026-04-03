@@ -451,7 +451,7 @@ export default function ChatPage() {
 
   /* ── Messages ── */
   const messagesEl = (
-    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1.5">
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-1.5">
       {tab === 'public' && publicMsgs.length === 0 && (
         <div className="flex items-center justify-center h-32 text-gray-600 text-sm">Henüz mesaj yok</div>
       )}

@@ -257,7 +257,12 @@ export default function AppLayout() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="flex-1 lg:ml-[230px] relative z-10 pb-14 lg:pb-0 min-h-[100dvh] flex flex-col">
+      <main className={cn(
+        'flex-1 lg:ml-[230px] relative z-10 flex flex-col',
+        location.pathname === '/chat'
+          ? 'h-[100dvh] overflow-hidden'
+          : 'pb-14 lg:pb-0 min-h-[100dvh]'
+      )}>
 
         {/* ── Mobile Header ── */}
         <header className="lg:hidden sticky top-0 z-20 flex items-center justify-between px-4"

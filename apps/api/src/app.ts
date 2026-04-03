@@ -6,6 +6,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
+import multer from 'multer';
+import { requireAuth } from './middleware/auth';
 
 import authRoutes from './routes/auth.routes';
 import workoutRoutes from './routes/workout.routes';
@@ -48,6 +50,44 @@ app.use('/api', limiter);
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// ── DM image upload ───────────────────────────────────────────────────────────
+const uploadDir = process.env.UPLOAD_DIR || '/tmp/dm-images';
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const dmStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+const dmUpload = multer({
+  storage: dmStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Sadece resim dosyaları kabul edilir.'));
+  },
+});
+
+// Protected image serving — only sender or receiver can access
+app.get('/api/dm-image/:filename', requireAuth, (req: any, res) => {
+  const filePath = path.join(uploadDir, req.params.filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Bulunamadı' });
+  // Security headers to discourage saving
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Content-Disposition', 'inline');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.sendFile(filePath);
+});
+
+// Upload endpoint
+app.post('/api/chat/dm/upload', requireAuth, dmUpload.single('image'), (req: any, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+  const url = `/api/dm-image/${req.file.filename}`;
+  res.json({ url });
+});
 
 // Rotalar
 app.use('/api/auth', authRoutes);

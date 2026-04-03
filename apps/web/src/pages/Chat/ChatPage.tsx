@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '@/api/chat.api';
 import { useSocket } from '@/context/SocketContext';
@@ -11,7 +11,12 @@ interface Msg {
   id: string; userId: string | null; userName: string; userInitials: string;
   content: string; createdAt: string; isMod: boolean; isAdmin: boolean;
 }
-interface DM { id: string; senderId: string | null; receiverId: string; senderName: string; content: string; isRead: boolean; createdAt: string; }
+interface DM {
+  id: string; senderId: string | null; receiverId: string; senderName: string;
+  content: string; isRead: boolean; createdAt: string;
+  msgType?: 'text' | 'image'; imageUrl?: string | null;
+  viewTimer?: number | null; viewedAt?: string | null; expiresAt?: string | null;
+}
 interface Friend { id: string; otherUser: { id: string; name: string }; }
 interface PendingReq { id: string; requester_id: string; requester_name: string; created_at: string; }
 interface Ban { id: string; user_id: string; user_name: string; reason: string; expires_at: string | null; }
@@ -43,6 +48,140 @@ function RoleBadge({ isAdmin, isMod }: { isAdmin: boolean; isMod: boolean }) {
   if (isAdmin) return <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(249,115,22,0.2)', color: '#f97316' }}>ADMİN</span>;
   if (isMod) return <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa' }}>MOD</span>;
   return null;
+}
+
+/* ────────── Image Viewer Modal ────────── */
+const ImageViewer = memo(({ url, senderName, timer, onClose }: {
+  url: string; senderName: string; timer: number | null; onClose: () => void;
+}) => {
+  const [remaining, setRemaining] = useState<number | null>(timer != null ? (timer === 0 ? 10 : timer) : null);
+
+  useEffect(() => {
+    if (remaining === null) return;
+    if (remaining <= 0) { onClose(); return; }
+    const t = setTimeout(() => setRemaining((r) => (r ?? 1) - 1), 1000);
+    return () => clearTimeout(t);
+  }, [remaining, onClose]);
+
+  // Block right-click and keyboard shortcuts
+  useEffect(() => {
+    const prevent = (e: Event) => e.preventDefault();
+    document.addEventListener('contextmenu', prevent);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'PrintScreen' || (e.ctrlKey && (e.key === 's' || e.key === 'p'))) e.preventDefault();
+    });
+    return () => document.removeEventListener('contextmenu', prevent);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}>
+
+      {/* Watermark */}
+      <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="absolute text-white/10 text-xs font-bold whitespace-nowrap"
+            style={{
+              top: `${(i % 4) * 28}%`,
+              left: `${Math.floor(i / 4) * 35}%`,
+              transform: 'rotate(-30deg)',
+            }}>
+            {senderName} • V&S
+          </div>
+        ))}
+      </div>
+
+      {/* Close button */}
+      <button onClick={onClose} className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center text-white"
+        style={{ background: 'rgba(255,255,255,0.12)' }}>✕</button>
+
+      {/* Timer */}
+      {remaining !== null && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 px-4 py-2 rounded-full text-sm font-bold text-white flex items-center gap-2"
+          style={{ background: remaining <= 3 ? 'rgba(239,68,68,0.8)' : 'rgba(249,115,22,0.8)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" strokeLinecap="round"/>
+          </svg>
+          {remaining}s
+        </div>
+      )}
+
+      {/* Image — no pointer events to prevent save-image context menu */}
+      <div className="relative max-w-[90vw] max-h-[80vh] select-none" onClick={(e) => e.stopPropagation()}>
+        <img src={url} alt="dm"
+          className="max-w-full max-h-[80vh] rounded-2xl object-contain select-none"
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ WebkitUserDrag: 'none' } as React.CSSProperties}
+        />
+        {/* Transparent overlay to block right-click on image */}
+        <div className="absolute inset-0 rounded-2xl" style={{ userSelect: 'none' }}
+          onContextMenu={(e) => e.preventDefault()} />
+      </div>
+    </div>
+  );
+});
+
+/* ────────── Image Message Bubble ────────── */
+function ImageMessage({ msg, isMe, myName, onOpen }: {
+  msg: DM; isMe: boolean; myName: string; onOpen: (msg: DM) => void;
+}) {
+  const isOpened = !!msg.viewedAt;
+  const isExpired = msg.expiresAt ? new Date(msg.expiresAt) < new Date() : false;
+  const isOnce = msg.viewTimer === 0;
+
+  if (isExpired) {
+    return (
+      <div className="px-3 py-2 rounded-2xl text-xs text-gray-600 italic"
+        style={{ background: 'rgba(255,255,255,0.04)' }}>
+        🕐 Bu görsel süresi doldu
+      </div>
+    );
+  }
+
+  // Sender sees a small thumb with a lock icon
+  if (isMe) {
+    return (
+      <div className="relative rounded-2xl overflow-hidden select-none"
+        style={{ width: 160, height: 120, background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)' }}>
+        <img src={msg.imageUrl!} alt="" className="w-full h-full object-cover"
+          style={{ filter: 'blur(12px)', transform: 'scale(1.1)' }} draggable={false}
+          onContextMenu={(e) => e.preventDefault()} />
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+          <span className="text-lg">{isOpened ? '✓' : '🔒'}</span>
+          <span className="text-[10px] text-white/70">
+            {isOpened ? 'Açıldı' : 'Gönderildi'}
+            {msg.viewTimer != null && ` · ${isOnce ? '1×' : `${msg.viewTimer}s`}`}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Receiver sees blurred image with "view" button
+  return (
+    <button onClick={() => onOpen(msg)} className="relative rounded-2xl overflow-hidden select-none"
+      style={{ width: 160, height: 120, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+      <img src={msg.imageUrl!} alt="" className="w-full h-full object-cover"
+        style={{ filter: isOpened ? 'blur(0)' : 'blur(14px)', transform: 'scale(1.1)', transition: 'filter 0.3s' }}
+        draggable={false} onContextMenu={(e) => e.preventDefault()} />
+      {!isOpened && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-white">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(249,115,22,0.85)', backdropFilter: 'blur(4px)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <span className="text-[11px] font-semibold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+            {msg.viewTimer != null ? (isOnce ? '1 kez görüntüle' : `${msg.viewTimer}s görüntüle`) : 'Görüntüle'}
+          </span>
+        </div>
+      )}
+    </button>
+  );
 }
 
 /* ────────── UserPopup ────────── */
@@ -196,6 +335,11 @@ export default function ChatPage() {
   const [newWord, setNewWord] = useState('');
   const [sentRequestIds, setSentRequestIds] = useState<string[]>([]);
   const [modIds, setModIds] = useState<string[]>([]);
+  const [viewerMsg, setViewerMsg] = useState<DM | null>(null);
+  const [imageTimer, setImageTimer] = useState<number | null>(null); // null=keep,0=once,5,10,30,60
+  const [showTimerPicker, setShowTimerPicker] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -285,6 +429,10 @@ export default function ChatPage() {
       setActiveDM((curr) => { if (curr?.id === friendId) { setTab('public'); return null; } return curr; });
     });
 
+    socket.on('dm:image-opened', (updated: DM) => {
+      setDmMsgs((p) => p.map((m) => m.id === updated.id ? { ...m, viewedAt: updated.viewedAt, expiresAt: updated.expiresAt } : m));
+    });
+
     return () => {
       socket.off('users:online');
       socket.off('chat:message');
@@ -296,6 +444,7 @@ export default function ChatPage() {
       socket.off('friend:accepted');
       socket.off('friend:sent');
       socket.off('friend:removed');
+      socket.off('dm:image-opened');
     };
   }, [socket, user?.id, qc, refetchMods]);
 
@@ -306,6 +455,39 @@ export default function ChatPage() {
     setInput('');
     setTimeout(() => inputRef.current?.focus(), 0);
   }, [input, socket, connected, tab, activeDM]);
+
+  const sendImage = useCallback(async (file: File) => {
+    if (!socket || !connected || !activeDM) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const res = await fetch('/api/chat/dm/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: form,
+      });
+      const { url } = await res.json();
+      socket.emit('dm:send', {
+        receiverId: activeDM.id,
+        content: '',
+        imageUrl: url,
+        viewTimer: imageTimer,
+      });
+    } catch (e) {
+      console.error('image upload failed', e);
+    } finally {
+      setUploading(false);
+      setShowTimerPicker(false);
+    }
+  }, [socket, connected, activeDM, imageTimer]);
+
+  const openImage = useCallback((msg: DM) => {
+    if (!msg.viewedAt && msg.senderId !== user?.id) {
+      socket?.emit('dm:open-image', { messageId: msg.id });
+    }
+    setViewerMsg(msg);
+  }, [socket, user?.id]);
 
   function removeFriend(friendId: string) {
     socket?.emit('friend:remove', { friendId });
@@ -514,17 +696,22 @@ export default function ChatPage() {
 
       {tab === 'dm' && activeDM && (dmMsgs as DM[]).map((msg) => {
         const isMe = msg.senderId === user?.id;
+        const isImage = msg.msgType === 'image';
         return (
           <div key={msg.id} className={`flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
             {!isMe && <div className="shrink-0 self-end mb-1"><Avatar name={activeDM.name} size={8} /></div>}
             <div className={`max-w-[72%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
               <div className="flex items-end gap-1.5">
-                <div className="px-3 py-2 rounded-2xl text-sm"
-                  style={isMe
-                    ? { background: 'rgba(249,115,22,0.2)', color: '#fed7aa', borderBottomRightRadius: 4 }
-                    : { background: 'rgba(255,255,255,0.07)', color: '#e2e8f0', borderBottomLeftRadius: 4 }}>
-                  {msg.content}
-                </div>
+                {isImage ? (
+                  <ImageMessage msg={msg} isMe={isMe} myName={user?.name ?? ''} onOpen={openImage} />
+                ) : (
+                  <div className="px-3 py-2 rounded-2xl text-sm"
+                    style={isMe
+                      ? { background: 'rgba(249,115,22,0.2)', color: '#fed7aa', borderBottomRightRadius: 4 }
+                      : { background: 'rgba(255,255,255,0.07)', color: '#e2e8f0', borderBottomLeftRadius: 4 }}>
+                    {msg.content}
+                  </div>
+                )}
                 <span className="text-[10px] text-gray-700 mb-1 shrink-0">{timeStr(msg.createdAt)}</span>
               </div>
             </div>
@@ -684,7 +871,55 @@ export default function ChatPage() {
           {tab !== 'admin' && (tab === 'public' || (tab === 'dm' && activeDM)) && (
             <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
               {!connected && <p className="text-xs text-yellow-500 mb-2 text-center animate-pulse">Bağlanıyor...</p>}
+
+              {/* Timer picker (DM only) */}
+              {tab === 'dm' && showTimerPicker && (
+                <div className="flex gap-1.5 mb-2 flex-wrap">
+                  {([null, 0, 5, 10, 30, 60] as (number | null)[]).map((t) => (
+                    <button key={String(t)} onClick={() => { setImageTimer(t); setShowTimerPicker(false); }}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all"
+                      style={imageTimer === t
+                        ? { background: 'rgba(249,115,22,0.3)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.5)' }
+                        : { background: 'rgba(255,255,255,0.06)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      {t === null ? '∞ Sakla' : t === 0 ? '1× Görüntüle' : `${t}s`}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="flex gap-2">
+                {/* Camera button (DM only) */}
+                {tab === 'dm' && activeDM && (
+                  <>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) sendImage(f); e.target.value = ''; }} />
+                    <button
+                      onClick={() => setShowTimerPicker((p) => !p)}
+                      title="Süre ayarla"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all"
+                      style={imageTimer != null
+                        ? { background: 'rgba(249,115,22,0.25)', color: '#fb923c' }
+                        : { background: 'rgba(255,255,255,0.07)', color: '#6b7280' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || !connected}
+                      title="Fotoğraf gönder"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
+                      style={{ background: 'rgba(255,255,255,0.07)', color: '#9ca3af' }}>
+                      {uploading
+                        ? <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                          </svg>}
+                    </button>
+                  </>
+                )}
+
                 <input ref={inputRef} className="input flex-1 text-sm"
                   placeholder={connected ? 'Mesaj yaz... (Enter)' : 'Bağlanılıyor...'}
                   value={input}
@@ -692,7 +927,7 @@ export default function ChatPage() {
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                   maxLength={500} disabled={!connected} />
                 <button onClick={sendMessage} disabled={!input.trim() || !connected}
-                  className="px-4 py-2 rounded-xl text-white disabled:opacity-40 transition-all"
+                  className="px-4 py-2 rounded-xl text-white disabled:opacity-40 transition-all shrink-0"
                   style={{ background: 'linear-gradient(135deg, #f97316, #e11d48)' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
                     <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
@@ -703,6 +938,16 @@ export default function ChatPage() {
           )}
         </div>
       </div>
+
+      {/* Image Viewer Modal */}
+      {viewerMsg?.imageUrl && (
+        <ImageViewer
+          url={viewerMsg.imageUrl}
+          senderName={viewerMsg.senderName}
+          timer={viewerMsg.viewTimer ?? null}
+          onClose={() => setViewerMsg(null)}
+        />
+      )}
     </div>
   );
 }

@@ -74,16 +74,32 @@ export function attachSocketServer(httpServer: http.Server) {
     });
 
     /* ── DM ── */
-    socket.on('dm:send', async ({ receiverId, content }: { receiverId: string; content: string }) => {
-      if (!content?.trim() || !receiverId) return;
+    socket.on('dm:send', async ({ receiverId, content, imageUrl, viewTimer }:
+      { receiverId: string; content: string; imageUrl?: string; viewTimer?: number | null }) => {
+      if (!receiverId) return;
+      if (!imageUrl && !content?.trim()) return;
       try {
         const friends = await chat.areFriends(userId, receiverId);
         if (!friends) { socket.emit('error', { message: 'Sadece arkadaşlarınıza DM atabilirsiniz.' }); return; }
-        const filtered = await chat.filterContent(content.trim().slice(0, 1000));
-        const msg = await chat.saveDM(userId, receiverId, filtered);
+        const filtered = imageUrl ? '' : await chat.filterContent(content.trim().slice(0, 1000));
+        const msg = await chat.saveDM(userId, receiverId, filtered, {
+          imageUrl: imageUrl || undefined,
+          viewTimer: viewTimer ?? null,
+        });
         socket.emit('dm:message', msg);
         emitToUser(receiverId, 'dm:message', msg);
       } catch (e) { console.error('dm:send', e); }
+    });
+
+    /* ── DM image open (start timer) ── */
+    socket.on('dm:open-image', async ({ messageId }: { messageId: string }) => {
+      try {
+        const updated = await chat.openDMImage(messageId, userId);
+        if (!updated) return;
+        // Notify both parties about the updated message state
+        socket.emit('dm:image-opened', updated);
+        emitToUser(updated.senderId!, 'dm:image-opened', updated);
+      } catch (e) { console.error('dm:open-image', e); }
     });
 
     socket.on('dm:read', async ({ senderId }: { senderId: string }) => {

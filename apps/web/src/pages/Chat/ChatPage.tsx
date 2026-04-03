@@ -50,6 +50,82 @@ function RoleBadge({ isAdmin, isMod }: { isAdmin: boolean; isMod: boolean }) {
   return null;
 }
 
+/* ────────── Image Send Preview (Telegram-style) ────────── */
+const TIMER_OPTIONS: { label: string; value: number | null }[] = [
+  { label: '∞', value: null },
+  { label: '1×', value: 0 },
+  { label: '5s', value: 5 },
+  { label: '10s', value: 10 },
+  { label: '30s', value: 30 },
+  { label: '60s', value: 60 },
+];
+
+function ImageSendPreview({ file, preview, uploading, onSend, onClose }: {
+  file: File; preview: string; uploading: boolean;
+  onSend: (file: File, timer: number | null) => void;
+  onClose: () => void;
+}) {
+  const [timer, setTimer] = useState<number | null>(null);
+
+  return (
+    <div className="fixed inset-0 z-[90] flex flex-col" style={{ background: '#080c14' }}>
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 shrink-0"
+        style={{ height: 56, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <button onClick={onClose}
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 active:text-white"
+          style={{ background: 'rgba(255,255,255,0.07)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-4 h-4">
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <p className="text-base font-semibold text-white">Fotoğraf Gönder</p>
+      </div>
+
+      {/* Image preview */}
+      <div className="flex-1 flex items-center justify-center p-6 min-h-0">
+        <img src={preview} alt="preview"
+          className="max-w-full max-h-full rounded-2xl object-contain select-none"
+          draggable={false} style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }} />
+      </div>
+
+      {/* Timer + send */}
+      <div className="shrink-0 px-4 pb-8 pt-4 flex flex-col gap-4"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div>
+          <p className="text-xs text-gray-500 mb-2 font-medium">Görüntüleme süresi</p>
+          <div className="flex gap-2">
+            {TIMER_OPTIONS.map((opt) => (
+              <button key={String(opt.value)} onClick={() => setTimer(opt.value)}
+                className="flex-1 py-2 rounded-xl text-sm font-semibold transition-all"
+                style={timer === opt.value
+                  ? { background: 'rgba(249,115,22,0.3)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.5)' }
+                  : { background: 'rgba(255,255,255,0.06)', color: '#6b7280', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-gray-600 mt-2">
+            {timer === null ? 'Sohbette kalıcı olarak görünür'
+              : timer === 0 ? 'Alıcı yalnızca 1 kez görüntüleyebilir'
+              : `Alıcı açtıktan sonra ${timer} saniyede kaybolur`}
+          </p>
+        </div>
+
+        <button onClick={() => onSend(file, timer)} disabled={uploading}
+          className="w-full py-3.5 rounded-2xl text-white font-bold text-base transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          style={{ background: 'linear-gradient(135deg, #f97316, #e11d48)', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }}>
+          {uploading
+            ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Gönderiliyor...</>
+            : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-5 h-5">
+                <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg> Gönder</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ────────── Image Viewer Modal ────────── */
 const ImageViewer = memo(({ url, senderName, timer, onClose }: {
   url: string; senderName: string; timer: number | null; onClose: () => void;
@@ -336,8 +412,7 @@ export default function ChatPage() {
   const [sentRequestIds, setSentRequestIds] = useState<string[]>([]);
   const [modIds, setModIds] = useState<string[]>([]);
   const [viewerMsg, setViewerMsg] = useState<DM | null>(null);
-  const [imageTimer, setImageTimer] = useState<number | null>(null); // null=keep,0=once,5,10,30,60
-  const [showTimerPicker, setShowTimerPicker] = useState(false);
+  const [pendingImage, setPendingImage] = useState<{ file: File; preview: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -456,31 +531,33 @@ export default function ChatPage() {
     setTimeout(() => inputRef.current?.focus(), 0);
   }, [input, socket, connected, tab, activeDM]);
 
-  const sendImage = useCallback(async (file: File) => {
+  const sendImage = useCallback(async (file: File, timer: number | null) => {
     if (!socket || !connected || !activeDM) return;
     setUploading(true);
     try {
+      const token = localStorage.getItem('accessToken');
       const form = new FormData();
       form.append('image', file);
       const res = await fetch('/api/chat/dm/upload', {
         method: 'POST',
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
         body: form,
       });
+      if (!res.ok) throw new Error('Upload failed');
       const { url } = await res.json();
       socket.emit('dm:send', {
         receiverId: activeDM.id,
         content: '',
         imageUrl: url,
-        viewTimer: imageTimer,
+        viewTimer: timer,
       });
+      setPendingImage(null);
     } catch (e) {
       console.error('image upload failed', e);
     } finally {
       setUploading(false);
-      setShowTimerPicker(false);
     }
-  }, [socket, connected, activeDM, imageTimer]);
+  }, [socket, connected, activeDM]);
 
   const openImage = useCallback((msg: DM) => {
     if (!msg.viewedAt && msg.senderId !== user?.id) {
@@ -872,50 +949,26 @@ export default function ChatPage() {
             <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
               {!connected && <p className="text-xs text-yellow-500 mb-2 text-center animate-pulse">Bağlanıyor...</p>}
 
-              {/* Timer picker (DM only) */}
-              {tab === 'dm' && showTimerPicker && (
-                <div className="flex gap-1.5 mb-2 flex-wrap">
-                  {([null, 0, 5, 10, 30, 60] as (number | null)[]).map((t) => (
-                    <button key={String(t)} onClick={() => { setImageTimer(t); setShowTimerPicker(false); }}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all"
-                      style={imageTimer === t
-                        ? { background: 'rgba(249,115,22,0.3)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.5)' }
-                        : { background: 'rgba(255,255,255,0.06)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      {t === null ? '∞ Sakla' : t === 0 ? '1× Görüntüle' : `${t}s`}
-                    </button>
-                  ))}
-                </div>
-              )}
-
               <div className="flex gap-2">
-                {/* Camera button (DM only) */}
+                {/* Camera button (DM only) — opens preview modal */}
                 {tab === 'dm' && activeDM && (
                   <>
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) sendImage(f); e.target.value = ''; }} />
-                    <button
-                      onClick={() => setShowTimerPicker((p) => !p)}
-                      title="Süre ayarla"
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all"
-                      style={imageTimer != null
-                        ? { background: 'rgba(249,115,22,0.25)', color: '#fb923c' }
-                        : { background: 'rgba(255,255,255,0.07)', color: '#6b7280' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" strokeLinecap="round"/>
-                      </svg>
-                    </button>
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) setPendingImage({ file: f, preview: URL.createObjectURL(f) });
+                        e.target.value = '';
+                      }} />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading || !connected}
+                      disabled={!connected}
                       title="Fotoğraf gönder"
                       className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
                       style={{ background: 'rgba(255,255,255,0.07)', color: '#9ca3af' }}>
-                      {uploading
-                        ? <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                            <circle cx="12" cy="13" r="4"/>
-                          </svg>}
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
                     </button>
                   </>
                 )}
@@ -938,6 +991,17 @@ export default function ChatPage() {
           )}
         </div>
       </div>
+
+      {/* Image Send Preview Modal */}
+      {pendingImage && (
+        <ImageSendPreview
+          file={pendingImage.file}
+          preview={pendingImage.preview}
+          uploading={uploading}
+          onSend={sendImage}
+          onClose={() => { setPendingImage(null); URL.revokeObjectURL(pendingImage.preview); }}
+        />
+      )}
 
       {/* Image Viewer Modal */}
       {viewerMsg?.imageUrl && (

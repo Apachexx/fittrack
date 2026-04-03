@@ -5,6 +5,7 @@ import { useSocket } from '@/context/SocketContext';
 import { useAuth } from '@/context/AuthContext';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import api from '@/api/client';
 
 /* ────────── types ────────── */
 interface Msg {
@@ -544,32 +545,29 @@ export default function ChatPage() {
 
   const sendImage = useCallback(async (file: File, timer: number | null) => {
     const dm = activeDMRef.current;
-    if (!socket || !connected || !dm) return;
+    if (!socket || !connected || !dm) {
+      alert(`Bağlantı hatası: socket=${!!socket} connected=${connected} dm=${!!dm}`);
+      return;
+    }
     setUploading(true);
     try {
-      const token = localStorage.getItem('accessToken');
       const form = new FormData();
       form.append('image', file);
-      const res = await fetch('/api/chat/dm/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token ?? ''}` },
-        body: form,
+      // Use axios instance — auth token injected automatically by interceptor
+      const { data } = await api.post<{ url: string }>('/chat/dm/upload', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Upload failed');
-      }
-      const { url } = await res.json();
       socket.emit('dm:send', {
         receiverId: dm.id,
         content: '',
-        imageUrl: url,
+        imageUrl: data.url,
         viewTimer: timer,
       });
       setPendingImage(null);
-    } catch (e) {
+    } catch (e: any) {
+      const msg = e?.response?.data?.error || e?.message || 'Bilinmeyen hata';
       console.error('image upload failed', e);
-      alert('Fotoğraf gönderilemedi: ' + (e as Error).message);
+      alert('Fotoğraf gönderilemedi: ' + msg);
     } finally {
       setUploading(false);
     }

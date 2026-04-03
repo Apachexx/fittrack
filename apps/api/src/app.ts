@@ -88,13 +88,18 @@ app.get('/api/dm-image/:filename', requireAuth, (req: any, res: any) => {
 
 // Upload endpoint — inline multer error handling
 app.post('/api/chat/dm/upload', requireAuth, (req: any, res: any) => {
+  console.log('[upload] hit, user:', req.user?.id, 'ct:', req.headers['content-type']);
   dmUpload.single('image')(req, res, (err: any) => {
     if (err) {
-      console.error('multer error:', err.message);
+      console.error('[upload] multer error:', err.message);
       return res.status(400).json({ error: err.message || 'Dosya yüklenemedi' });
     }
-    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+    if (!req.file) {
+      console.error('[upload] no file in req');
+      return res.status(400).json({ error: 'Dosya bulunamadı' });
+    }
     const url = `/api/dm-image/${req.file.filename}`;
+    console.log('[upload] success:', url);
     res.json({ url });
   });
 });

@@ -29,6 +29,7 @@ exports.removeFriend = removeFriend;
 exports.areFriends = areFriends;
 exports.getDMs = getDMs;
 exports.saveDM = saveDM;
+exports.openDMImage = openDMImage;
 exports.markDMsRead = markDMsRead;
 exports.getUnreadCounts = getUnreadCounts;
 exports.getBannedWords = getBannedWords;
@@ -256,11 +257,13 @@ async function areFriends(userA, userB) {
 async function getDMs(userId, friendId, limit = 50) {
     const rows = await (0, db_1.query)(`SELECT dm.id, dm.sender_id, dm.receiver_id,
             COALESCE(u.name, 'Silindi') AS name,
-            dm.content, dm.is_read, dm.created_at
+            dm.content, dm.is_read, dm.created_at,
+            dm.msg_type, dm.image_url, dm.view_timer, dm.viewed_at, dm.expires_at
      FROM direct_messages dm
      LEFT JOIN users u ON u.id = dm.sender_id
-     WHERE (dm.sender_id = $1 AND dm.receiver_id = $2)
-        OR (dm.sender_id = $2 AND dm.receiver_id = $1)
+     WHERE ((dm.sender_id = $1 AND dm.receiver_id = $2)
+        OR (dm.sender_id = $2 AND dm.receiver_id = $1))
+       AND (dm.expires_at IS NULL OR dm.expires_at > NOW())
      ORDER BY dm.created_at ASC
      LIMIT $3`, [userId, friendId, limit]);
     return rows.map((r) => ({
@@ -271,14 +274,22 @@ async function getDMs(userId, friendId, limit = 50) {
         content: r.content,
         isRead: r.is_read,
         createdAt: r.created_at,
+        msgType: (r.msg_type || 'text'),
+        imageUrl: r.image_url,
+        viewTimer: r.view_timer,
+        viewedAt: r.viewed_at,
+        expiresAt: r.expires_at,
     }));
 }
-async function saveDM(senderId, receiverId, content) {
-    const rows = await (0, db_1.query)(`INSERT INTO direct_messages (sender_id, receiver_id, content)
-     VALUES ($1, $2, $3)
+async function saveDM(senderId, receiverId, content, opts) {
+    const msgType = opts?.imageUrl ? 'image' : 'text';
+    const rows = await (0, db_1.query)(`INSERT INTO direct_messages
+       (sender_id, receiver_id, content, msg_type, image_url, view_timer)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING id, sender_id, receiver_id,
        (SELECT name FROM users WHERE id = $1) AS name,
-       content, is_read, created_at`, [senderId, receiverId, content]);
+       content, is_read, created_at,
+       msg_type, image_url, view_timer, viewed_at, expires_at`, [senderId, receiverId, content, msgType, opts?.imageUrl ?? null, opts?.viewTimer ?? null]);
     const r = rows[0];
     return {
         id: r.id,
@@ -288,6 +299,38 @@ async function saveDM(senderId, receiverId, content) {
         content: r.content,
         isRead: r.is_read,
         createdAt: r.created_at,
+        msgType: msgType,
+        imageUrl: r.image_url,
+        viewTimer: r.view_timer,
+        viewedAt: r.viewed_at,
+        expiresAt: r.expires_at,
+    };
+}
+// Called when recipient opens an image — starts the timer
+async function openDMImage(messageId, viewerId) {
+    const rows = await (0, db_1.query)(`UPDATE direct_messages
+     SET viewed_at   = COALESCE(viewed_at, NOW()),
+         expires_at  = CASE
+           WHEN viewed_at IS NULL AND view_timer IS NOT NULL AND view_timer > 0
+             THEN NOW() + (view_timer || ' seconds')::INTERVAL
+           WHEN viewed_at IS NULL AND view_timer = 0
+             THEN NOW() + INTERVAL '10 seconds'
+           ELSE expires_at
+         END
+     WHERE id = $1 AND receiver_id = $2 AND msg_type = 'image'
+     RETURNING id, sender_id, receiver_id,
+       (SELECT name FROM users WHERE id = sender_id) AS name,
+       content, is_read, created_at,
+       msg_type, image_url, view_timer, viewed_at, expires_at`, [messageId, viewerId]);
+    if (!rows[0])
+        return null;
+    const r = rows[0];
+    return {
+        id: r.id, senderId: r.sender_id, receiverId: r.receiver_id,
+        senderName: r.name, content: r.content, isRead: r.is_read,
+        createdAt: r.created_at, msgType: 'image',
+        imageUrl: r.image_url, viewTimer: r.view_timer,
+        viewedAt: r.viewed_at, expiresAt: r.expires_at,
     };
 }
 async function markDMsRead(receiverId, senderId) {

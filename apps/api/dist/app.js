@@ -11,6 +11,8 @@ const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const auth_1 = require("./middleware/auth");
+const upload_1 = require("./middleware/upload");
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const workout_routes_1 = __importDefault(require("./routes/workout.routes"));
 const nutrition_routes_1 = __importDefault(require("./routes/nutrition.routes"));
@@ -44,8 +46,19 @@ const limiter = (0, express_rate_limit_1.default)({
 });
 app.use('/api', limiter);
 // Body parsing
-app.use(express_1.default.json({ limit: '10mb' }));
+app.use(express_1.default.json({ limit: '20mb' }));
 app.use(express_1.default.urlencoded({ extended: true }));
+// Protected image serving (auth required, no direct URL access)
+app.get('/api/dm-image/:filename', auth_1.requireAuth, (req, res) => {
+    const filename = path_1.default.basename(req.params.filename);
+    const filePath = path_1.default.join(upload_1.uploadDir, filename);
+    if (!fs_1.default.existsSync(filePath))
+        return res.status(404).json({ error: 'Bulunamadı' });
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.sendFile(filePath);
+});
 // Rotalar
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/workouts', workout_routes_1.default);
@@ -57,7 +70,7 @@ app.use('/api/settings', settings_routes_1.default);
 app.use('/api/supplements', supplement_routes_1.default);
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString(), v: '7000000' });
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), v: 'upload-base64-fix' });
 });
 // Hata işleyici
 app.use(error_1.errorHandler);
@@ -96,13 +109,13 @@ runMigrations()
     .then(() => {
     (0, supplementReminder_1.startSupplementReminderJob)();
     httpServer.listen(PORT, () => {
-        console.log(`🚀 FitTrack API çalışıyor: http://localhost:${PORT}`);
+        console.log(`🚀 V&S API çalışıyor: http://localhost:${PORT}`);
     });
 })
     .catch((err) => {
     console.error('Migration hatası, server yine de başlatılıyor:', err);
     httpServer.listen(PORT, () => {
-        console.log(`🚀 FitTrack API çalışıyor: http://localhost:${PORT}`);
+        console.log(`🚀 V&S API çalışıyor: http://localhost:${PORT}`);
     });
 });
 exports.default = app;

@@ -74,7 +74,7 @@ app.use('/api/supplements', supplementRoutes);
 
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), v: '7000000' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), v: 'upload-base64-fix' });
 });
 
 // Hata işleyici

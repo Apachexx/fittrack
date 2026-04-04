@@ -33,6 +33,7 @@ router.post('/dm/upload', (req: any, res: any) => {
   try {
     const buffer = Buffer.from(imageData, 'base64');
     if (buffer.length > 15 * 1024 * 1024) return res.status(400).json({ error: 'Dosya çok büyük (max 15MB)' });
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
     fs.writeFileSync(filePath, buffer);
     const url = `/api/dm-image/${filename}`;
     console.log('[upload] ok:', url, 'user:', req.user?.id);

@@ -553,10 +553,17 @@ export default function ChatPage() {
     try {
       const form = new FormData();
       form.append('image', file);
-      // Use axios instance — auth token injected automatically by interceptor
-      const { data } = await api.post<{ url: string }>('/chat/dm/upload', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch('/api/chat/dm/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
       socket.emit('dm:send', {
         receiverId: dm.id,
         content: '',
@@ -565,9 +572,8 @@ export default function ChatPage() {
       });
       setPendingImage(null);
     } catch (e: any) {
-      const msg = e?.response?.data?.error || e?.message || 'Bilinmeyen hata';
       console.error('image upload failed', e);
-      alert('Fotoğraf gönderilemedi: ' + msg);
+      alert('Fotoğraf gönderilemedi: ' + (e?.message || 'Bilinmeyen hata'));
     } finally {
       setUploading(false);
     }

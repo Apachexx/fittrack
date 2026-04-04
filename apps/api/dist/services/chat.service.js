@@ -17,6 +17,8 @@ exports.deleteOwnMessage = deleteOwnMessage;
 exports.getMessageOwner = getMessageOwner;
 exports.deleteMessage = deleteMessage;
 exports.getUserNames = getUserNames;
+exports.updateLastSeen = updateLastSeen;
+exports.getLastSeen = getLastSeen;
 exports.searchUsers = searchUsers;
 exports.getAllUsers = getAllUsers;
 exports.getFriends = getFriends;
@@ -157,6 +159,13 @@ async function getUserNames(ids) {
     if (ids.length === 0)
         return [];
     return (0, db_1.query)(`SELECT id, name, is_moderator AS is_mod, is_admin FROM users WHERE id = ANY($1)`, [ids]);
+}
+async function updateLastSeen(userId) {
+    await (0, db_1.query)(`UPDATE users SET last_seen = NOW() WHERE id = $1`, [userId]);
+}
+async function getLastSeen(userId) {
+    const rows = await (0, db_1.query)(`SELECT last_seen FROM users WHERE id = $1`, [userId]);
+    return rows[0]?.last_seen ?? null;
 }
 async function searchUsers(q, exclude) {
     return (0, db_1.query)(`SELECT id, name FROM users

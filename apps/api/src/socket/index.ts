@@ -61,6 +61,11 @@ export function attachSocketServer(httpServer: http.Server) {
 
     await broadcastOnline();
 
+    // Send current online list directly to the newly connected user
+    const ids = [...onlineUsers.keys()];
+    const users = await chat.getUserNames(ids);
+    socket.emit('users:online', users);
+
     /* ── Public chat ── */
     socket.on('chat:send', async (content: string) => {
       if (!content?.trim()) return;
@@ -206,8 +211,24 @@ export function attachSocketServer(httpServer: http.Server) {
       } catch (e) { console.error('admin:set_mod', e); }
     });
 
-    socket.on('disconnect', () => {
+    /* ── Get online list on demand ── */
+    socket.on('get:online', async () => {
+      const ids = [...onlineUsers.keys()];
+      const users = await chat.getUserNames(ids);
+      socket.emit('users:online', users);
+    });
+
+    /* ── Last seen ── */
+    socket.on('get:last_seen', async ({ userId: targetId }: { userId: string }) => {
+      const lastSeen = await chat.getLastSeen(targetId);
+      socket.emit('user:last_seen', { userId: targetId, lastSeen });
+    });
+
+    socket.on('disconnect', async () => {
       removeOnline(userId, socket.id);
+      await chat.updateLastSeen(userId);
+      // Broadcast last_seen to all online users
+      io.to('public').emit('user:went_offline', { userId, lastSeen: new Date().toISOString() });
       broadcastOnline();
     });
   });

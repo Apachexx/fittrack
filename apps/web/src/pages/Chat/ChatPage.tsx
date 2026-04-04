@@ -41,6 +41,17 @@ interface Mod { id: string; name: string; is_admin: boolean; is_moderator: boole
 
 /* ────────── helpers ────────── */
 function timeStr(iso: string) { return format(new Date(iso), 'HH:mm', { locale: tr }); }
+function lastSeenStr(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMin = Math.floor((now.getTime() - d.getTime()) / 60000);
+  if (diffMin < 1) return 'az önce çevrimiçiydi';
+  if (diffMin < 60) return `${diffMin} dakika önce görüldü`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `bugün ${format(d, 'HH:mm', { locale: tr })}'de görüldü`;
+  if (diffH < 48) return `dün ${format(d, 'HH:mm', { locale: tr })}'de görüldü`;
+  return format(d, 'd MMM HH:mm', { locale: tr }) + "'de görüldü";
+}
 function avatarColor(name: string) {
   const colors = ['#f97316','#3b82f6','#22c55e','#a855f7','#ec4899','#14b8a6','#f59e0b'];
   let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) % colors.length;
@@ -417,6 +428,8 @@ export default function ChatPage() {
   const [dmMsgs, setDmMsgs] = useState<DM[]>([]);
   const [activeDM, setActiveDM] = useState<{ id: string; name: string } | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; is_mod: boolean; is_admin: boolean }[]>([]);
+  const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
+  const [dmMenuOpen, setDmMenuOpen] = useState(false);
   const [input, setInput] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -487,6 +500,8 @@ export default function ChatPage() {
       setUnread((p) => { const n = { ...p }; delete n[activeDM.id]; return n; });
       socket?.emit('dm:read', { senderId: activeDM.id });
     });
+    // Request last seen if not online
+    socket?.emit('get:last_seen', { userId: activeDM.id });
   }, [activeDM?.id]); // eslint-disable-line
 
   useEffect(() => {
@@ -498,6 +513,15 @@ export default function ChatPage() {
     if (!socket) return;
 
     socket.on('users:online', (users: { id: string; name: string; is_mod: boolean; is_admin: boolean }[]) => setOnlineUsers(users));
+    socket.on('user:went_offline', ({ userId: uid, lastSeen }: { userId: string; lastSeen: string }) => {
+      setLastSeenMap(p => ({ ...p, [uid]: lastSeen }));
+    });
+    socket.on('user:last_seen', ({ userId: uid, lastSeen }: { userId: string; lastSeen: string | null }) => {
+      if (lastSeen) setLastSeenMap(p => ({ ...p, [uid]: lastSeen }));
+    });
+    socket.on('dm:read', ({ by }: { by: string }) => {
+      setDmMsgs(p => p.map(m => m.senderId === user?.id && m.receiverId === by ? { ...m, isRead: true } : m));
+    });
     socket.on('chat:message', (msg: Msg) => setPublicMsgs((p) => [...p.slice(-199), msg]));
     socket.on('chat:deleted', ({ messageId }: { messageId: string }) =>
       setPublicMsgs((p) => p.filter((m) => m.id !== messageId)));
@@ -533,6 +557,9 @@ export default function ChatPage() {
 
     return () => {
       socket.off('users:online');
+      socket.off('user:went_offline');
+      socket.off('user:last_seen');
+      socket.off('dm:read');
       socket.off('chat:message');
       socket.off('chat:deleted');
       socket.off('chat:cleared');
@@ -990,21 +1017,54 @@ export default function ChatPage() {
             <button onClick={() => setActiveDM(null)} className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ color: '#f97316' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5"><path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
-            <div className="relative shrink-0">
-              <Avatar name={activeDM.name} size={9} />
-              {onlineUsers.some(u => u.id === activeDM.id) && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: '#0d1117' }} />
-              )}
+            {(() => {
+              const isOnline = onlineUsers.some(u => u.id === activeDM.id);
+              const ls = lastSeenMap[activeDM.id];
+              return (
+                <>
+                  <div className="relative shrink-0">
+                    <Avatar name={activeDM.name} size={9} />
+                    {isOnline && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: '#0d1117' }} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{activeDM.name}</p>
+                    <p className="text-xs" style={{ color: isOnline ? '#4ade80' : '#6b7280' }}>
+                      {isOnline ? 'çevrimiçi' : ls ? lastSeenStr(ls) : 'çevrimdışı'}
+                    </p>
+                  </div>
+                </>
+              );
+            })()}
+            <div className="flex items-center gap-1 relative">
+              <button onClick={() => alert('Sesli arama özelliği yakında geliyor! 🎙️')}
+                className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: '#9ca3af' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </button>
+              <div className="relative">
+                <button onClick={() => setDmMenuOpen(p => !p)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: '#9ca3af' }}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                  </svg>
+                </button>
+                {dmMenuOpen && (
+                  <div className="absolute right-0 top-10 z-50 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
+                    style={{ background: '#1a2332', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    {[
+                      { label: 'Profili Gör', action: (e: React.MouseEvent) => { openPopup(e, activeDM); setDmMenuOpen(false); } },
+                      { label: 'Mesajları Temizle', action: () => { setDmMsgs([]); setDmMenuOpen(false); } },
+                      { label: 'Arkadaşlıktan Çıkar', action: () => { removeFriend(activeDM.id); setDmMenuOpen(false); setActiveDM(null); }, danger: true },
+                    ].map((item) => (
+                      <button key={item.label} onClick={item.action as any}
+                        className="w-full text-left px-4 py-3 text-sm transition-all active:bg-white/10"
+                        style={{ color: (item as any).danger ? '#f87171' : '#e2e8f0' }}>
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{activeDM.name}</p>
-              <p className="text-xs" style={{ color: onlineUsers.some(u => u.id === activeDM.id) ? '#4ade80' : '#6b7280' }}>
-                {onlineUsers.some(u => u.id === activeDM.id) ? 'çevrimiçi' : 'son görülme yakın zamanda'}
-              </p>
-            </div>
-            <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: '#6b7280' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </button>
           </div>
           {/* Messages */}
           <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2" style={{ background: '#0d1117' }}>
@@ -1225,38 +1285,61 @@ export default function ChatPage() {
                   </div>
                 </>
               )}
-              {tab === 'dm' && activeDM && (
-                <button className="flex items-center gap-3" onClick={(e) => openPopup(e, activeDM)}>
-                  <div className="relative shrink-0">
-                    <Avatar name={activeDM.name} size={9} />
-                    {onlineUsers.some(u => u.id === activeDM.id) && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: '#111f2e' }} />
-                    )}
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-white">{activeDM.name}</p>
-                    <p className="text-xs" style={{ color: onlineUsers.some(u => u.id === activeDM.id) ? '#4ade80' : '#6b7280' }}>
-                      {onlineUsers.some(u => u.id === activeDM.id) ? 'çevrimiçi' : 'son görülme bir hafta içinde'}
-                    </p>
-                  </div>
-                </button>
-              )}
+              {tab === 'dm' && activeDM && (() => {
+                const isOnline = onlineUsers.some(u => u.id === activeDM.id);
+                const ls = lastSeenMap[activeDM.id];
+                return (
+                  <button className="flex items-center gap-3" onClick={(e) => openPopup(e, activeDM)}>
+                    <div className="relative shrink-0">
+                      <Avatar name={activeDM.name} size={9} />
+                      {isOnline && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: '#111f2e' }} />}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-white">{activeDM.name}</p>
+                      <p className="text-xs" style={{ color: isOnline ? '#4ade80' : '#6b7280' }}>
+                        {isOnline ? 'çevrimiçi' : ls ? lastSeenStr(ls) : 'çevrimdışı'}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })()}
               {tab === 'dm' && !activeDM && <span className="text-sm text-gray-500">Özel Mesajlar</span>}
               {tab === 'admin' && <span className="text-sm font-semibold text-red-400">🛡️ Yönetim Paneli</span>}
             </div>
             {/* Right icons */}
             {(tab === 'dm' && activeDM) && (
-              <div className="flex items-center gap-1">
-                <button className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: '#9ca3af' }}>
+              <div className="flex items-center gap-1 relative">
+                <button
+                  onClick={() => alert('Sesli arama özelliği yakında geliyor! 🎙️')}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: '#9ca3af' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
                   </svg>
                 </button>
-                <button className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: '#9ca3af' }}>
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-                  </svg>
-                </button>
+                <div className="relative">
+                  <button onClick={() => setDmMenuOpen(p => !p)}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: '#9ca3af' }}>
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                    </svg>
+                  </button>
+                  {dmMenuOpen && (
+                    <div className="absolute right-0 top-10 z-50 rounded-2xl overflow-hidden shadow-2xl min-w-[180px]"
+                      style={{ background: '#1a2332', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      {[
+                        { label: 'Profili Gör', action: (e: React.MouseEvent) => { openPopup(e, activeDM); setDmMenuOpen(false); } },
+                        { label: 'Mesajları Temizle', action: () => { setDmMsgs([]); setDmMenuOpen(false); } },
+                        { label: 'Arkadaşlıktan Çıkar', action: () => { removeFriend(activeDM.id); setDmMenuOpen(false); }, danger: true },
+                      ].map((item) => (
+                        <button key={item.label} onClick={item.action as any}
+                          className="w-full text-left px-4 py-3 text-sm transition-all hover:bg-white/5"
+                          style={{ color: (item as any).danger ? '#f87171' : '#e2e8f0' }}>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

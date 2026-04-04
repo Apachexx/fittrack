@@ -228,6 +228,15 @@ export async function getUserNames(ids: string[]): Promise<{ id: string; name: s
   );
 }
 
+export async function updateLastSeen(userId: string) {
+  await query(`UPDATE users SET last_seen = NOW() WHERE id = $1`, [userId]);
+}
+
+export async function getLastSeen(userId: string): Promise<string | null> {
+  const rows = await query<{ last_seen: string | null }>(`SELECT last_seen FROM users WHERE id = $1`, [userId]);
+  return rows[0]?.last_seen ?? null;
+}
+
 export async function searchUsers(q: string, exclude: string) {
   return query<{ id: string; name: string }>(
     `SELECT id, name FROM users

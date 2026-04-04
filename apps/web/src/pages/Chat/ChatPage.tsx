@@ -429,11 +429,17 @@ export default function ChatPage() {
   const [viewerMsg, setViewerMsg] = useState<DM | null>(null);
   const [pendingImage, setPendingImage] = useState<{ file: File; preview: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1024);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const activeDMRef = useRef(activeDM);
   useEffect(() => { activeDMRef.current = activeDM; }, [activeDM]);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(userSearch), 400);
@@ -931,6 +937,239 @@ export default function ChatPage() {
       </div>
     </div>
   );
+
+  /* ─── MOBILE LAYOUT ─────────────────────────────────────────────── */
+  const mobileModals = (
+    <>
+      {banTarget && <BanModal user={banTarget} meIsAdmin={isAdmin} onClose={() => setBanTarget(null)} onBan={doBan} />}
+      {popup && <UserPopup user={popup.user} pos={popup.pos} meId={user?.id ?? ''} meIsAdmin={isAdmin} meIsMod={isMod} friends={friends as Friend[]} sentIds={sentRequestIds} modIds={modIds} onRequest={sendFriendRequest} onRemoveFriend={removeFriend} onClose={() => setPopup(null)} onSetMod={setMod} onBanTarget={(u) => setBanTarget(u)} />}
+      {pendingImage && <ImageSendPreview file={pendingImage.file} preview={pendingImage.preview} uploading={uploading} onSend={sendImage} onClose={() => { setPendingImage(null); URL.revokeObjectURL(pendingImage.preview); }} />}
+      {viewerMsg?.imageUrl && <ImageViewer url={viewerMsg.imageUrl} senderName={viewerMsg.senderName} timer={viewerMsg.viewTimer ?? null} onClose={() => setViewerMsg(null)} />}
+    </>
+  );
+
+  const mobileInputBar = (isPublic: boolean) => (
+    <div className="shrink-0 flex items-end gap-2 px-3 py-2" style={{ background: '#0d1117', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      {!isPublic && (
+        <>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) setPendingImage({ file: f, preview: URL.createObjectURL(f) }); e.target.value = ''; }} />
+          <button onClick={() => fileInputRef.current?.click()} disabled={!connected}
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 disabled:opacity-40"
+            style={{ color: '#6b7280' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+            </svg>
+          </button>
+        </>
+      )}
+      <div className="flex-1 flex items-center rounded-full px-4 py-2.5" style={{ background: '#1a2332', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <input ref={inputRef} className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+          placeholder="Mesaj" value={input} onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+          maxLength={500} disabled={!connected} />
+      </div>
+      <button onClick={sendMessage} disabled={!input.trim() || !connected}
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
+        style={{ background: input.trim() ? 'linear-gradient(135deg,#f97316,#e11d48)' : 'rgba(255,255,255,0.08)' }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-5 h-5 text-white">
+          <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  );
+
+  if (isMobile) {
+    /* ── Mobile: DM Conversation ── */
+    if (tab === 'dm' && activeDM) {
+      return (
+        <div className="flex flex-col" style={{ height: '100%', background: '#0d1117', overflow: 'hidden' }}>
+          {mobileModals}
+          {/* Header */}
+          <div className="shrink-0 flex items-center gap-3 px-3 py-2.5" style={{ background: '#0d1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <button onClick={() => setActiveDM(null)} className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ color: '#f97316' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5"><path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <div className="relative shrink-0">
+              <Avatar name={activeDM.name} size={9} />
+              {onlineUsers.some(u => u.id === activeDM.id) && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: '#0d1117' }} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{activeDM.name}</p>
+              <p className="text-xs" style={{ color: onlineUsers.some(u => u.id === activeDM.id) ? '#4ade80' : '#6b7280' }}>
+                {onlineUsers.some(u => u.id === activeDM.id) ? 'çevrimiçi' : 'son görülme yakın zamanda'}
+              </p>
+            </div>
+            <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: '#6b7280' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </button>
+          </div>
+          {/* Messages */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2" style={{ background: '#0d1117' }}>
+            {(dmMsgs as DM[]).map((msg) => {
+              const isMe = msg.senderId === user?.id;
+              const isImage = msg.msgType === 'image';
+              return (
+                <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                  {!isMe && <div className="shrink-0 mb-1"><Avatar name={activeDM.name} size={7} /></div>}
+                  <div className={`max-w-[80%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                    {isImage ? (
+                      <div className="relative">
+                        <ImageMessage msg={msg} isMe={isMe} myName={user?.name ?? ''} onOpen={openImage} />
+                        <div className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                          <span className="text-[10px] text-white/80">{timeStr(msg.createdAt)}</span>
+                          {isMe && <svg viewBox="0 0 16 11" className="w-3.5 h-2.5" fill="none"><path d="M1 5.5l3.5 3.5L8 5.5M6 5.5l3.5 3.5L15 2" stroke={msg.isRead ? '#60a5fa' : 'rgba(255,255,255,0.5)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="px-3 pt-2 pb-2 text-sm leading-relaxed"
+                        style={isMe ? { background: 'linear-gradient(135deg,#f97316,#e11d48)', color: '#fff', borderRadius: '18px 18px 4px 18px', boxShadow: '0 2px 8px rgba(249,115,22,0.2)' }
+                          : { background: '#1a2332', color: '#e2e8f0', borderRadius: '18px 18px 18px 4px', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+                        <span>{msg.content}</span>
+                        <span className="inline-flex items-center gap-1 ml-2 align-bottom" style={{ float: 'right', marginTop: 2 }}>
+                          <span className="text-[10px]" style={{ color: isMe ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>{timeStr(msg.createdAt)}</span>
+                          {isMe && <svg viewBox="0 0 16 11" className="w-3.5 h-2.5 shrink-0" fill="none"><path d="M1 5.5l3.5 3.5L8 5.5M6 5.5l3.5 3.5L15 2" stroke={msg.isRead ? '#93c5fd' : 'rgba(255,255,255,0.55)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
+          {mobileInputBar(false)}
+        </div>
+      );
+    }
+
+    /* ── Mobile: List / Public Chat ── */
+    return (
+      <div className="flex flex-col" style={{ height: '100%', background: '#0d1117', overflow: 'hidden' }}>
+        {mobileModals}
+        {/* Tabs */}
+        <div className="shrink-0 flex gap-1 px-3 py-2" style={{ background: '#0d1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          {[
+            { key: 'public', label: 'Genel', color: '#f97316' },
+            { key: 'dm', label: `DM${totalUnread > 0 ? ` · ${totalUnread}` : ''}`, color: '#60a5fa' },
+            ...(isAdmin || isMod ? [{ key: 'admin', label: '🛡', color: '#f87171' }] : []),
+          ].map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key as 'public' | 'dm' | 'admin')}
+              className="px-4 py-2 rounded-full text-sm font-semibold transition-all"
+              style={tab === t.key ? { background: t.color + '20', color: t.color } : { color: '#6b7280' }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* DM list */}
+        {tab === 'dm' && (
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {/* Requests */}
+            {(requests as PendingReq[]).length > 0 && (
+              <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                <p className="text-xs font-semibold text-orange-400 mb-2">İstekler ({(requests as PendingReq[]).length})</p>
+                {(requests as PendingReq[]).map((r) => (
+                  <div key={r.id} className="flex items-center gap-3 py-2">
+                    <Avatar name={r.senderName} size={9} />
+                    <span className="flex-1 text-sm text-white">{r.senderName}</span>
+                    <button onClick={() => acceptFriendRequest(r.id)} className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white" style={{ background: '#f97316' }}>Kabul</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Friends */}
+            {(friends as Friend[]).length === 0 && (
+              <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-600">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-10 h-10 opacity-30"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75" strokeLinecap="round"/></svg>
+                <p className="text-sm">Henüz arkadaş yok</p>
+              </div>
+            )}
+            {(friends as Friend[]).map((f) => {
+              const u = f.otherUser;
+              const unreadCount = unread[u.id] ?? 0;
+              const isOnline = onlineUsers.some(o => o.id === u.id);
+              return (
+                <button key={f.id} onClick={() => { setActiveDM({ id: u.id, name: u.name }); setTab('dm'); setUnread(p => ({ ...p, [u.id]: 0 })); }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 transition-all active:bg-white/5"
+                  style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div className="relative shrink-0">
+                    <Avatar name={u.name} size={11} />
+                    {isOnline && <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-400 border-2" style={{ borderColor: '#0d1117' }} />}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-semibold text-white truncate">{u.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{isOnline ? 'çevrimiçi' : 'çevrimdışı'}</p>
+                  </div>
+                  {unreadCount > 0 && (
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: '#f97316' }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+            {/* User search */}
+            <div className="px-4 py-3 border-t" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <input className="w-full rounded-full px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none"
+                style={{ background: '#1a2332', border: '1px solid rgba(255,255,255,0.08)' }}
+                placeholder="Kullanıcı ara..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
+              {(searchResults as { id: string; name: string }[]).map((u) => {
+                const alreadyFriend = (friends as Friend[]).some((f) => f.otherUser.id === u.id);
+                const pending = sentRequestIds.includes(u.id);
+                return (
+                  <div key={u.id} className="flex items-center gap-3 py-2.5 mt-1">
+                    <Avatar name={u.name} size={9} />
+                    <span className="flex-1 text-sm text-white">{u.name}</span>
+                    {alreadyFriend ? <span className="text-xs text-green-500">✓ Arkadaş</span>
+                      : pending ? <span className="text-xs text-gray-500">Gönderildi</span>
+                      : <button onClick={() => sendFriendRequest(u.id)} className="text-xs px-3 py-1.5 rounded-full font-semibold text-white" style={{ background: '#f97316' }}>Ekle</button>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Public chat */}
+        {tab === 'public' && (
+          <>
+            <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2">
+              {(publicMsgs as Msg[]).map((msg) => {
+                const isMe = msg.userId === user?.id;
+                return (
+                  <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                    {!isMe && <button onClick={(e) => openPopup(e, { id: msg.userId!, name: msg.userName, isAdmin: msg.isAdmin })} className="shrink-0"><Avatar name={msg.userName} size={8} /></button>}
+                    <div className={`max-w-[80%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                      {!isMe && <div className="flex items-center gap-1 mb-1 px-1"><span className="text-xs font-semibold" style={{ color: '#f97316' }}>{msg.userName}</span><RoleBadge isAdmin={msg.isAdmin} isMod={msg.isMod} /></div>}
+                      <div className="px-3 pt-2 pb-2 text-sm leading-relaxed"
+                        style={isMe ? { background: 'linear-gradient(135deg,#f97316,#e11d48)', color: '#fff', borderRadius: '18px 18px 4px 18px' }
+                          : { background: '#1a2332', color: '#e2e8f0', borderRadius: '18px 18px 18px 4px' }}>
+                        <span>{msg.content}</span>
+                        <span className="inline-flex items-center gap-1 ml-2 align-bottom" style={{ float: 'right', marginTop: 2 }}>
+                          <span className="text-[10px]" style={{ color: isMe ? 'rgba(255,255,255,0.6)' : '#6b7280' }}>{timeStr(msg.createdAt)}</span>
+                        </span>
+                      </div>
+                      {isMe && <button onClick={() => deleteOwnMsg(msg.id)} className="text-[10px] text-gray-700 hover:text-red-400 mt-0.5 px-1">🗑</button>}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+            {mobileInputBar(true)}
+          </>
+        )}
+
+        {tab === 'admin' && (
+          <div className="flex-1 min-h-0 overflow-y-auto">{adminEl}</div>
+        )}
+      </div>
+    );
+  }
+  /* ──────────────────────────────────────────────────────────────────── */
 
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ height: '100%' }}>

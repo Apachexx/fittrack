@@ -121,29 +121,17 @@ function ChatDrawer({ open, onClose, everOpened }: { open: boolean; onClose: () 
           willChange: 'transform',
         }}
       >
-        {/* Header */}
-        <div
-          className="flex items-center gap-3 px-4 shrink-0"
-          style={{
-            height: 52,
-            borderBottom: '1px solid rgba(255,255,255,0.07)',
-            background: 'rgba(5,8,14,0.9)',
-          }}
-        >
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 active:text-white transition-colors shrink-0"
-            style={{ background: 'rgba(255,255,255,0.07)' }}
-          >
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2}>
-              <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Minimal close strip — chat page manages its own headers */}
+        <div className="shrink-0 flex items-center justify-end px-3 py-1" style={{ background: '#0d1117' }}>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full text-gray-600 active:text-white"
+            style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5}>
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
             </svg>
           </button>
-          <p className="text-base font-bold text-white">Sohbet</p>
         </div>
 
-        {/* Chat content — px-3 py-3 matches page layout */}
-        <div className="flex-1 overflow-hidden flex flex-col px-3 py-2" style={{ minHeight: 0 }}>
+        <div className="flex-1 overflow-hidden flex flex-col" style={{ minHeight: 0 }}>
           {everOpened && (
             <Suspense fallback={
               <div className="flex items-center justify-center h-full">

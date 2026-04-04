@@ -48,7 +48,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Body parsing
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Protected image serving (auth required, no direct URL access)

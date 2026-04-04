@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { dmUpload } from '../middleware/upload';
+import { uploadDir } from '../middleware/upload';
+import fs from 'fs';
+import path from 'path';
 import {
   getMessages, getFriends, getPendingRequests, getDMs, getUnreadCounts,
   searchUsers, getMe,
@@ -19,18 +21,26 @@ router.get('/unread', getUnreadCounts);
 router.get('/users', searchUsers);
 router.get('/me', getMe);
 
-// DM image upload
+// DM image upload (base64 JSON — avoids multipart issues)
 router.post('/dm/upload', (req: any, res: any) => {
-  dmUpload.single('image')(req, res, (err: any) => {
-    if (err) {
-      console.error('[upload] multer error:', err.message);
-      return res.status(400).json({ error: err.message });
-    }
-    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
-    const url = `/api/dm-image/${req.file.filename}`;
+  const { imageData, mimeType } = req.body || {};
+  if (!imageData) return res.status(400).json({ error: 'imageData eksik' });
+  const validMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const mime = validMimes.includes(mimeType) ? mimeType : 'image/jpeg';
+  const ext = mime.split('/')[1];
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const filePath = path.join(uploadDir, filename);
+  try {
+    const buffer = Buffer.from(imageData, 'base64');
+    if (buffer.length > 15 * 1024 * 1024) return res.status(400).json({ error: 'Dosya çok büyük (max 15MB)' });
+    fs.writeFileSync(filePath, buffer);
+    const url = `/api/dm-image/${filename}`;
     console.log('[upload] ok:', url, 'user:', req.user?.id);
     res.json({ url });
-  });
+  } catch (e: any) {
+    console.error('[upload] error:', e.message);
+    res.status(500).json({ error: 'Yükleme başarısız' });
+  }
 });
 
 // Admin

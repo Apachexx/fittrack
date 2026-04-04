@@ -57,7 +57,7 @@ app.get('/api/dm-image/:filename', auth_1.requireAuth, (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.setHeader('Content-Disposition', 'inline');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.sendFile(filePath);
+    res.sendFile(path_1.default.resolve(filePath));
 });
 // Rotalar
 app.use('/api/auth', auth_routes_1.default);

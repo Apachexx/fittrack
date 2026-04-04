@@ -59,7 +59,7 @@ app.get('/api/dm-image/:filename', requireAuth, (req: any, res: any) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Content-Disposition', 'inline');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.sendFile(filePath);
+  res.sendFile(path.resolve(filePath));
 });
 
 // Rotalar

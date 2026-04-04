@@ -7,6 +7,21 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import api from '@/api/client';
 
+/* ────────── AuthImg: loads auth-protected images via axios ────────── */
+function AuthImg({ src, className, style, draggable, onContextMenu }: React.ImgHTMLAttributes<HTMLImageElement>) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!src) return;
+    let url: string;
+    api.get(src.replace('/api/', '/'), { responseType: 'blob' })
+      .then(r => { url = URL.createObjectURL(r.data); setBlobUrl(url); })
+      .catch(() => setBlobUrl(src)); // fallback
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [src]);
+  if (!blobUrl) return <div className={className} style={{ ...style, background: 'rgba(255,255,255,0.05)' }} />;
+  return <img src={blobUrl} className={className} style={style} draggable={draggable} onContextMenu={onContextMenu} />;
+}
+
 /* ────────── types ────────── */
 interface Msg {
   id: string; userId: string | null; userName: string; userInitials: string;
@@ -195,7 +210,7 @@ const ImageViewer = memo(({ url, senderName, timer, onClose }: {
 
       {/* Image — no pointer events to prevent save-image context menu */}
       <div className="relative max-w-[90vw] max-h-[80vh] select-none" onClick={(e) => e.stopPropagation()}>
-        <img src={url} alt="dm"
+        <AuthImg src={url} alt="dm"
           className="max-w-full max-h-[80vh] rounded-2xl object-contain select-none"
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
@@ -231,7 +246,7 @@ function ImageMessage({ msg, isMe, myName, onOpen }: {
     return (
       <div className="relative rounded-2xl overflow-hidden select-none"
         style={{ width: 160, height: 120, background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)' }}>
-        <img src={msg.imageUrl!} alt="" className="w-full h-full object-cover"
+        <AuthImg src={msg.imageUrl!} className="w-full h-full object-cover"
           style={{ filter: 'blur(12px)', transform: 'scale(1.1)' }} draggable={false}
           onContextMenu={(e) => e.preventDefault()} />
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
@@ -249,7 +264,7 @@ function ImageMessage({ msg, isMe, myName, onOpen }: {
   return (
     <button onClick={() => onOpen(msg)} className="relative rounded-2xl overflow-hidden select-none"
       style={{ width: 160, height: 120, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
-      <img src={msg.imageUrl!} alt="" className="w-full h-full object-cover"
+      <AuthImg src={msg.imageUrl!} className="w-full h-full object-cover"
         style={{ filter: isOpened ? 'blur(0)' : 'blur(14px)', transform: 'scale(1.1)', transition: 'filter 0.3s' }}
         draggable={false} onContextMenu={(e) => e.preventDefault()} />
       {!isOpened && (

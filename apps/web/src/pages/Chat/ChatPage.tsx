@@ -225,7 +225,7 @@ const ImageViewer = memo(({ url, senderName, timer, onClose }: {
 });
 
 /* ────────── Image Message Bubble ────────── */
-function ImageMessage({ msg, isMe, myName, onOpen }: {
+function ImageMessage({ msg, isMe, onOpen }: {
   msg: DM; isMe: boolean; myName: string; onOpen: (msg: DM) => void;
 }) {
   const isOpened = !!msg.viewedAt;
@@ -234,51 +234,41 @@ function ImageMessage({ msg, isMe, myName, onOpen }: {
 
   if (isExpired) {
     return (
-      <div className="px-3 py-2 rounded-2xl text-xs text-gray-600 italic"
-        style={{ background: 'rgba(255,255,255,0.04)' }}>
-        🕐 Bu görsel süresi doldu
+      <div className="px-3 py-2 rounded-2xl text-xs italic" style={{ color: '#6b7280', background: 'rgba(255,255,255,0.04)' }}>
+        Görsel süresi doldu
       </div>
     );
   }
 
-  // Sender sees a small thumb with a lock icon
   if (isMe) {
     return (
-      <div className="relative rounded-2xl overflow-hidden select-none"
-        style={{ width: 160, height: 120, background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)' }}>
+      <div className="relative rounded-[18px] overflow-hidden select-none" style={{ width: 200, height: 150 }}>
         <AuthImg src={msg.imageUrl!} className="w-full h-full object-cover"
-          style={{ filter: 'blur(12px)', transform: 'scale(1.1)' }} draggable={false}
+          style={{ filter: 'blur(14px)', transform: 'scale(1.1)' }} draggable={false}
           onContextMenu={(e) => e.preventDefault()} />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-          <span className="text-lg">{isOpened ? '✓' : '🔒'}</span>
-          <span className="text-[10px] text-white/70">
-            {isOpened ? 'Açıldı' : 'Gönderildi'}
-            {msg.viewTimer != null && ` · ${isOnce ? '1×' : `${msg.viewTimer}s`}`}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1" style={{ background: 'rgba(0,0,0,0.35)' }}>
+          <span className="text-2xl">{isOpened ? '✅' : '🔒'}</span>
+          <span className="text-[11px] text-white/80 font-medium">
+            {isOpened ? 'Görüntülendi' : 'Gönderildi'}{msg.viewTimer != null && ` · ${isOnce ? '1×' : `${msg.viewTimer}s`}`}
           </span>
         </div>
       </div>
     );
   }
 
-  // Receiver sees blurred image with "view" button
   return (
-    <button onClick={() => onOpen(msg)} className="relative rounded-2xl overflow-hidden select-none"
-      style={{ width: 160, height: 120, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+    <button onClick={() => onOpen(msg)} className="relative rounded-[18px] overflow-hidden select-none" style={{ width: 200, height: 150 }}>
       <AuthImg src={msg.imageUrl!} className="w-full h-full object-cover"
-        style={{ filter: isOpened ? 'blur(0)' : 'blur(14px)', transform: 'scale(1.1)', transition: 'filter 0.3s' }}
+        style={{ filter: isOpened ? 'blur(0)' : 'blur(16px)', transform: 'scale(1.1)', transition: 'filter 0.4s' }}
         draggable={false} onContextMenu={(e) => e.preventDefault()} />
       {!isOpened && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-white">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(249,115,22,0.85)', backdropFilter: 'blur(4px)' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white" style={{ background: 'rgba(0,0,0,0.3)' }}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(249,115,22,0.9)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-5 h-5">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
             </svg>
           </div>
-          <span className="text-[11px] font-semibold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
-            {msg.viewTimer != null ? (isOnce ? '1 kez görüntüle' : `${msg.viewTimer}s görüntüle`) : 'Görüntüle'}
-          </span>
+          <span className="text-xs font-semibold">{msg.viewTimer != null ? (isOnce ? '1× Görüntüle' : `${msg.viewTimer}s`) : 'Görüntüle'}</span>
         </div>
       )}
     </button>
@@ -756,51 +746,51 @@ export default function ChatPage() {
       {tab === 'public' && (publicMsgs as Msg[]).map((msg) => {
         const isMe = msg.userId === user?.id;
         return (
-          <div key={msg.id} className={`flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
+          <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
             {!isMe && (
-              <button onClick={(e) => openPopup(e, { id: msg.userId!, name: msg.userName, isAdmin: msg.isAdmin })} className="shrink-0 self-end mb-5">
+              <button onClick={(e) => openPopup(e, { id: msg.userId!, name: msg.userName, isAdmin: msg.isAdmin })} className="shrink-0">
                 <Avatar name={msg.userName} size={8} />
               </button>
             )}
-            <div className={`max-w-[72%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+            <div className={`max-w-[75%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
               {!isMe && (
-                <div className="flex items-center gap-1.5 mb-0.5 px-1">
+                <div className="flex items-center gap-1 mb-1 px-1">
                   <button onClick={(e) => openPopup(e, { id: msg.userId!, name: msg.userName, isAdmin: msg.isAdmin })}
-                    className="text-[11px] text-gray-500 hover:text-orange-400 transition-colors">
+                    className="text-xs font-semibold hover:underline" style={{ color: '#f97316' }}>
                     {msg.userName}
                   </button>
                   <RoleBadge isAdmin={msg.isAdmin} isMod={msg.isMod} />
                 </div>
               )}
-              <div className="flex items-end gap-1.5">
-                <div className="px-3 py-2 rounded-2xl text-sm leading-relaxed"
-                  style={isMe
-                    ? { background: 'rgba(249,115,22,0.2)', color: '#fed7aa', borderBottomRightRadius: 4 }
-                    : { background: 'rgba(255,255,255,0.07)', color: '#e2e8f0', borderBottomLeftRadius: 4 }}>
-                  {msg.content}
+              <div className="relative px-3 pt-2 pb-2 text-sm leading-relaxed"
+                style={isMe ? {
+                  background: 'linear-gradient(135deg,#f97316,#e11d48)',
+                  color: '#fff',
+                  borderRadius: '18px 18px 4px 18px',
+                  boxShadow: '0 2px 8px rgba(249,115,22,0.25)',
+                } : {
+                  background: '#1e2a3a',
+                  color: '#e2e8f0',
+                  borderRadius: '18px 18px 18px 4px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                }}>
+                <span>{msg.content}</span>
+                <span className="inline-flex items-center gap-1 ml-2 align-bottom" style={{ float: 'right', marginTop: 2 }}>
+                  <span className="text-[10px]" style={{ color: isMe ? 'rgba(255,255,255,0.65)' : '#6b7280' }}>{timeStr(msg.createdAt)}</span>
+                </span>
+              </div>
+              {/* Mod actions */}
+              {(isMe || (!isMe && msg.userId && (isAdmin || (isMod && !msg.isAdmin)))) && (
+                <div className="flex gap-1 mt-0.5 px-1">
+                  {isMe && <button onClick={() => deleteOwnMsg(msg.id)} className="text-[10px] text-gray-600 hover:text-red-400 transition-colors">🗑</button>}
+                  {!isMe && msg.userId && (isAdmin || (isMod && !msg.isAdmin)) && (
+                    <>
+                      <button onClick={() => deleteMsgAsAdmin(msg.id)} className="text-[10px] text-red-400 hover:text-red-300 transition-colors">🗑 Sil</button>
+                      <button onClick={() => setBanTarget({ id: msg.userId!, name: msg.userName })} className="text-[10px] text-orange-400 hover:text-orange-300 transition-colors ml-1">🚫</button>
+                    </>
+                  )}
                 </div>
-                <span className="text-[10px] text-gray-700 mb-1 shrink-0">{timeStr(msg.createdAt)}</span>
-              </div>
-              {/* Action row */}
-              <div className="flex items-center gap-1 mt-0.5 px-1">
-                {/* Own delete */}
-                {isMe && (
-                  <button onClick={() => deleteOwnMsg(msg.id)} title="Mesajı Sil"
-                    className="text-[10px] px-1.5 py-0.5 rounded-lg text-gray-600 hover:text-red-400 transition-all"
-                    style={{ background: 'rgba(255,255,255,0.04)' }}>🗑</button>
-                )}
-                {/* Mod/Admin delete others — mod cannot touch admin messages */}
-                {!isMe && msg.userId && (isAdmin || (isMod && !msg.isAdmin)) && (
-                  <>
-                    <button onClick={() => deleteMsgAsAdmin(msg.id)} title="Mesajı Sil"
-                      className="text-[10px] px-1.5 py-0.5 rounded-lg text-red-400 hover:text-white transition-all"
-                      style={{ background: 'rgba(239,68,68,0.1)' }}>🗑 Sil</button>
-                    <button onClick={() => setBanTarget({ id: msg.userId!, name: msg.userName })} title="Engelle"
-                      className="text-[10px] px-1.5 py-0.5 rounded-lg text-orange-400 hover:text-white transition-all"
-                      style={{ background: 'rgba(249,115,22,0.1)' }}>🚫</button>
-                  </>
-                )}
-              </div>
+              )}
             </div>
           </div>
         );
@@ -810,22 +800,50 @@ export default function ChatPage() {
         const isMe = msg.senderId === user?.id;
         const isImage = msg.msgType === 'image';
         return (
-          <div key={msg.id} className={`flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
-            {!isMe && <div className="shrink-0 self-end mb-1"><Avatar name={activeDM.name} size={8} /></div>}
-            <div className={`max-w-[72%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-              <div className="flex items-end gap-1.5">
-                {isImage ? (
-                  <ImageMessage msg={msg} isMe={isMe} myName={user?.name ?? ''} onOpen={openImage} />
-                ) : (
-                  <div className="px-3 py-2 rounded-2xl text-sm"
-                    style={isMe
-                      ? { background: 'rgba(249,115,22,0.2)', color: '#fed7aa', borderBottomRightRadius: 4 }
-                      : { background: 'rgba(255,255,255,0.07)', color: '#e2e8f0', borderBottomLeftRadius: 4 }}>
-                    {msg.content}
-                  </div>
-                )}
-                <span className="text-[10px] text-gray-700 mb-1 shrink-0">{timeStr(msg.createdAt)}</span>
+          <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+            {/* Avatar — other side only */}
+            {!isMe && (
+              <div className="shrink-0 mb-1">
+                <Avatar name={activeDM.name} size={8} />
               </div>
+            )}
+            {/* Bubble */}
+            <div className={`max-w-[75%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+              {isImage ? (
+                <div className="relative">
+                  <ImageMessage msg={msg} isMe={isMe} myName={user?.name ?? ''} onOpen={openImage} />
+                  {/* timestamp overlay on image */}
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                    style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+                    <span className="text-[10px] text-white/80">{timeStr(msg.createdAt)}</span>
+                    {isMe && <svg viewBox="0 0 16 11" className="w-3.5 h-2.5" fill="none">
+                      <path d="M1 5.5l3.5 3.5L8 5.5M6 5.5l3.5 3.5L15 2" stroke={msg.isRead ? '#60a5fa' : 'rgba(255,255,255,0.5)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>}
+                  </div>
+                </div>
+              ) : (
+                <div className="relative px-3 pt-2 pb-2 text-sm leading-relaxed"
+                  style={isMe ? {
+                    background: 'linear-gradient(135deg,#f97316,#e11d48)',
+                    color: '#fff',
+                    borderRadius: '18px 18px 4px 18px',
+                    boxShadow: '0 2px 8px rgba(249,115,22,0.25)',
+                  } : {
+                    background: '#1e2a3a',
+                    color: '#e2e8f0',
+                    borderRadius: '18px 18px 18px 4px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  }}>
+                  <span>{msg.content}</span>
+                  {/* timestamp + checkmark inside bubble */}
+                  <span className="inline-flex items-center gap-1 ml-2 align-bottom" style={{ float: 'right', marginTop: 2 }}>
+                    <span className="text-[10px]" style={{ color: isMe ? 'rgba(255,255,255,0.65)' : '#6b7280' }}>{timeStr(msg.createdAt)}</span>
+                    {isMe && <svg viewBox="0 0 16 11" className="w-3.5 h-2.5 shrink-0" fill="none">
+                      <path d="M1 5.5l3.5 3.5L8 5.5M6 5.5l3.5 3.5L15 2" stroke={msg.isRead ? '#93c5fd' : 'rgba(255,255,255,0.55)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -953,20 +971,33 @@ export default function ChatPage() {
       <div className="flex gap-2 flex-1 min-h-0">
         {tab !== 'admin' && sidebarEl}
 
-        <div className="flex-1 flex flex-col card overflow-hidden min-w-0">
-          {/* Header */}
-          <div className="px-4 py-3 border-b shrink-0 flex items-center justify-between"
-            style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-            <div className="flex items-center gap-2">
-              {tab === 'public' && <><span>💬</span><span className="text-sm font-semibold text-white">Genel Sohbet</span></>}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0 rounded-2xl" style={{ background: '#0d1826' }}>
+          {/* ── Telegram-style Header ── */}
+          <div className="px-4 py-3 shrink-0 flex items-center justify-between"
+            style={{ background: '#111f2e', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="flex items-center gap-3">
+              {tab === 'public' && (
+                <>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0"
+                    style={{ background: 'linear-gradient(135deg,#f97316,#e11d48)' }}>💬</div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Genel Sohbet</p>
+                    <p className="text-xs text-gray-500">{onlineUsers.length} çevrimiçi</p>
+                  </div>
+                </>
+              )}
               {tab === 'dm' && activeDM && (
-                <button className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-                  onClick={(e) => openPopup(e, activeDM)}>
-                  <Avatar name={activeDM.name} size={7} />
+                <button className="flex items-center gap-3" onClick={(e) => openPopup(e, activeDM)}>
+                  <div className="relative shrink-0">
+                    <Avatar name={activeDM.name} size={9} />
+                    {onlineUsers.some(u => u.id === activeDM.id) && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: '#111f2e' }} />
+                    )}
+                  </div>
                   <div className="text-left">
                     <p className="text-sm font-semibold text-white">{activeDM.name}</p>
-                    <p className="text-xs" style={{ color: onlineUsers.map(u=>u.id).includes(activeDM.id) ? '#4ade80' : '#6b7280' }}>
-                      {onlineUsers.map(u=>u.id).includes(activeDM.id) ? 'Çevrimiçi' : 'Çevrimdışı'}
+                    <p className="text-xs" style={{ color: onlineUsers.some(u => u.id === activeDM.id) ? '#4ade80' : '#6b7280' }}>
+                      {onlineUsers.some(u => u.id === activeDM.id) ? 'çevrimiçi' : 'son görülme bir hafta içinde'}
                     </p>
                   </div>
                 </button>
@@ -974,54 +1005,74 @@ export default function ChatPage() {
               {tab === 'dm' && !activeDM && <span className="text-sm text-gray-500">Özel Mesajlar</span>}
               {tab === 'admin' && <span className="text-sm font-semibold text-red-400">🛡️ Yönetim Paneli</span>}
             </div>
-            {tab === 'public' && <span className="text-xs text-gray-600">{onlineUsers.map(u=>u.id).length} çevrimiçi</span>}
+            {/* Right icons */}
+            {(tab === 'dm' && activeDM) && (
+              <div className="flex items-center gap-1">
+                <button className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: '#9ca3af' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                </button>
+                <button className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: '#9ca3af' }}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
 
-          {tab === 'admin' ? adminEl : messagesEl}
+          {/* Messages area with subtle pattern bg */}
+          <div className="flex-1 min-h-0 relative" style={{ background: '#0d1826' }}>
+            {tab === 'admin' ? adminEl : messagesEl}
+          </div>
 
-          {/* Input */}
+          {/* ── Telegram-style Input ── */}
           {tab !== 'admin' && (tab === 'public' || (tab === 'dm' && activeDM)) && (
-            <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              {!connected && <p className="text-xs text-yellow-500 mb-2 text-center animate-pulse">Bağlanıyor...</p>}
+            <div className="px-3 py-3 shrink-0 flex items-end gap-2"
+              style={{ background: '#111f2e', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              {!connected && <p className="text-xs text-yellow-500 mb-2 text-center animate-pulse w-full absolute">Bağlanıyor...</p>}
 
-              <div className="flex gap-2">
-                {/* Camera button (DM only) — opens preview modal */}
-                {tab === 'dm' && activeDM && (
-                  <>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) setPendingImage({ file: f, preview: URL.createObjectURL(f) });
-                        e.target.value = '';
-                      }} />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={!connected}
-                      title="Fotoğraf gönder"
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
-                      style={{ background: 'rgba(255,255,255,0.07)', color: '#9ca3af' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                      </svg>
-                    </button>
-                  </>
-                )}
+              {/* Attachment / Camera (DM only) */}
+              {tab === 'dm' && activeDM && (
+                <>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) setPendingImage({ file: f, preview: URL.createObjectURL(f) });
+                      e.target.value = '';
+                    }} />
+                  <button onClick={() => fileInputRef.current?.click()} disabled={!connected}
+                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-40 hover:bg-white/10"
+                    style={{ color: '#6b7280' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </button>
+                </>
+              )}
 
-                <input ref={inputRef} className="input flex-1 text-sm"
-                  placeholder={connected ? 'Mesaj yaz... (Enter)' : 'Bağlanılıyor...'}
+              {/* Text input pill */}
+              <div className="flex-1 flex items-center rounded-full px-4 py-2.5 gap-2"
+                style={{ background: '#1e2a3a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <input ref={inputRef}
+                  className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+                  placeholder={tab === 'dm' ? 'Mesaj' : 'Mesaj yaz...'}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                   maxLength={500} disabled={!connected} />
-                <button onClick={sendMessage} disabled={!input.trim() || !connected}
-                  className="px-4 py-2 rounded-xl text-white disabled:opacity-40 transition-all shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #e11d48)' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                    <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
               </div>
+
+              {/* Send button */}
+              <button onClick={sendMessage} disabled={!input.trim() || !connected}
+                className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
+                style={{ background: input.trim() ? 'linear-gradient(135deg,#f97316,#e11d48)' : 'rgba(255,255,255,0.08)' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-5 h-5 text-white">
+                  <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             </div>
           )}
         </div>

@@ -456,6 +456,7 @@ export default function ChatPage() {
   const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; is_mod: boolean; is_admin: boolean }[]>([]);
   const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
   const [dmMenuOpen, setDmMenuOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -590,6 +591,11 @@ export default function ChatPage() {
       setDmMsgs((p) => p.map((m) => m.id === updated.id ? { ...m, viewedAt: updated.viewedAt, expiresAt: updated.expiresAt } : m));
     });
 
+    socket.on('error', ({ message }: { message: string }) => {
+      setToastMsg(message);
+      setTimeout(() => setToastMsg(null), 4000);
+    });
+
     return () => {
       socket.off('users:online');
       socket.off('user:went_offline');
@@ -605,6 +611,7 @@ export default function ChatPage() {
       socket.off('friend:sent');
       socket.off('friend:removed');
       socket.off('dm:image-opened');
+      socket.off('error');
     };
   }, [socket, user?.id, qc, refetchMods]);
 
@@ -619,7 +626,8 @@ export default function ChatPage() {
   const sendImage = useCallback(async (file: File, timer: number | null) => {
     const dm = activeDMRef.current;
     if (!socket || !connected || !dm) {
-      alert(`Bağlantı hatası: socket=${!!socket} connected=${connected} dm=${!!dm}`);
+      setToastMsg('Bağlantı yok, lütfen bekleyin...');
+      setTimeout(() => setToastMsg(null), 3000);
       return;
     }
     setUploading(true);
@@ -646,7 +654,8 @@ export default function ChatPage() {
       setPendingImage(null);
     } catch (e: any) {
       console.error('image upload failed', e);
-      alert('Fotoğraf gönderilemedi: ' + (e?.message || 'Bilinmeyen hata'));
+      setToastMsg('Fotoğraf gönderilemedi: ' + (e?.message || 'Bilinmeyen hata'));
+      setTimeout(() => setToastMsg(null), 4000);
     } finally {
       setUploading(false);
     }
@@ -1001,8 +1010,16 @@ export default function ChatPage() {
   );
 
   /* ─── MOBILE LAYOUT ─────────────────────────────────────────────── */
+  const toastEl = toastMsg ? (
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 rounded-2xl text-sm font-medium text-white shadow-2xl pointer-events-none"
+      style={{ background: 'rgba(239,68,68,0.92)', backdropFilter: 'blur(8px)', maxWidth: '90vw', textAlign: 'center' }}>
+      {toastMsg}
+    </div>
+  ) : null;
+
   const mobileModals = (
     <>
+      {toastEl}
       {banTarget && <BanModal user={banTarget} meIsAdmin={isAdmin} onClose={() => setBanTarget(null)} onBan={doBan} />}
       {popup && <UserPopup user={popup.user} pos={popup.pos} meId={user?.id ?? ''} meIsAdmin={isAdmin} meIsMod={isMod} friends={friends as Friend[]} sentIds={sentRequestIds} modIds={modIds} onRequest={sendFriendRequest} onRemoveFriend={removeFriend} onClose={() => setPopup(null)} onSetMod={setMod} onBanTarget={(u) => setBanTarget(u)} />}
       {pendingImage && <ImageSendPreview file={pendingImage.file} preview={pendingImage.preview} uploading={uploading} onSend={sendImage} onClose={() => { setPendingImage(null); URL.revokeObjectURL(pendingImage.preview); }} />}
@@ -1268,6 +1285,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ height: '100%' }}>
+      {toastEl}
       {banTarget && <BanModal user={banTarget} meIsAdmin={isAdmin} onClose={() => setBanTarget(null)} onBan={doBan} />}
       {popup && (
         <UserPopup

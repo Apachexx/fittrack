@@ -245,8 +245,10 @@ function ImageMessage({ msg, isMe, onOpen }: {
 
   if (isExpired) {
     return (
-      <div className="px-3 py-2 rounded-2xl text-xs italic" style={{ color: '#6b7280', background: 'rgba(255,255,255,0.04)' }}>
-        Görsel süresi doldu
+      <div className="relative rounded-[18px] overflow-hidden flex flex-col items-center justify-center gap-1 select-none"
+        style={{ width: 200, height: 80, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <span className="text-xl opacity-60">🔒</span>
+        <span className="text-[11px] text-gray-400 italic">Görsel süresi doldu</span>
       </div>
     );
   }
@@ -447,12 +449,21 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const activeDMRef = useRef(activeDM);
+  const dmMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => { activeDMRef.current = activeDM; }, [activeDM]);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+  useEffect(() => {
+    if (!dmMenuOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (dmMenuRef.current && !dmMenuRef.current.contains(e.target as Node)) setDmMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [dmMenuOpen]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(userSearch), 400);
@@ -1040,7 +1051,7 @@ export default function ChatPage() {
                 className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: '#9ca3af' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
               </button>
-              <div className="relative">
+              <div className="relative" ref={dmMenuRef}>
                 <button onClick={() => setDmMenuOpen(p => !p)}
                   className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: '#9ca3af' }}>
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -1133,9 +1144,9 @@ export default function ChatPage() {
                 <p className="text-xs font-semibold text-orange-400 mb-2">İstekler ({(requests as PendingReq[]).length})</p>
                 {(requests as PendingReq[]).map((r) => (
                   <div key={r.id} className="flex items-center gap-3 py-2">
-                    <Avatar name={r.senderName} size={9} />
-                    <span className="flex-1 text-sm text-white">{r.senderName}</span>
-                    <button onClick={() => acceptFriendRequest(r.id)} className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white" style={{ background: '#f97316' }}>Kabul</button>
+                    <Avatar name={r.requester_name} size={9} />
+                    <span className="flex-1 text-sm text-white">{r.requester_name}</span>
+                    <button onClick={() => acceptRequest(r.id)} className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white" style={{ background: '#f97316' }}>Kabul</button>
                   </div>
                 ))}
               </div>
@@ -1316,7 +1327,7 @@ export default function ChatPage() {
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
                   </svg>
                 </button>
-                <div className="relative">
+                <div className="relative" ref={dmMenuRef}>
                   <button onClick={() => setDmMenuOpen(p => !p)}
                     className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: '#9ca3af' }}>
                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">

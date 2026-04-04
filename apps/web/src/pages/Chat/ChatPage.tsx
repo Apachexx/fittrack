@@ -922,7 +922,7 @@ export default function ChatPage() {
 
   /* ── Admin Panel ── */
   const adminEl = (
-    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+    <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-6">
       {/* Danger actions */}
       <div className="flex gap-2">
         <button onClick={clearChat}
@@ -1380,7 +1380,7 @@ export default function ChatPage() {
           </div>
 
           {/* Messages area with subtle pattern bg */}
-          <div className="flex-1 min-h-0 relative" style={{ background: '#0d1826' }}>
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ background: '#0d1826' }}>
             {tab === 'admin' ? adminEl : messagesEl}
           </div>
 

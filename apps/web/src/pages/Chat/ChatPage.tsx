@@ -10,15 +10,23 @@ import api from '@/api/client';
 /* ────────── AuthImg: loads auth-protected images via axios ────────── */
 function AuthImg({ src, className, style, draggable, onContextMenu }: React.ImgHTMLAttributes<HTMLImageElement>) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
+    setBlobUrl(null); setFailed(false);
     if (!src) return;
     let url: string;
     api.get(src.replace('/api/', '/'), { responseType: 'blob' })
       .then(r => { url = URL.createObjectURL(r.data); setBlobUrl(url); })
-      .catch(() => setBlobUrl(src)); // fallback
+      .catch(() => setFailed(true));
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [src]);
-  if (!blobUrl) return <div className={className} style={{ ...style, background: 'rgba(255,255,255,0.05)' }} />;
+  if (failed) return (
+    <div className={className} style={{ ...style, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4 }}>
+      <span style={{ fontSize: 22, opacity: 0.4 }}>🖼️</span>
+      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>Yüklenemedi</span>
+    </div>
+  );
+  if (!blobUrl) return <div className={className} style={{ ...style, background: 'rgba(255,255,255,0.06)' }} />;
   return <img src={blobUrl} className={className} style={style} draggable={draggable} onContextMenu={onContextMenu} />;
 }
 
@@ -255,11 +263,11 @@ function ImageMessage({ msg, isMe, onOpen }: {
 
   if (isMe) {
     return (
-      <div className="relative rounded-[18px] overflow-hidden select-none" style={{ width: 200, height: 150 }}>
+      <div className="relative rounded-[18px] overflow-hidden select-none" style={{ width: 200, height: 150, background: '#1a2840' }}>
         <AuthImg src={msg.imageUrl!} className="w-full h-full object-cover"
           style={{ filter: 'blur(14px)', transform: 'scale(1.1)' }} draggable={false}
           onContextMenu={(e) => e.preventDefault()} />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1" style={{ background: 'rgba(0,0,0,0.35)' }}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1" style={{ background: 'rgba(0,0,0,0.45)' }}>
           <span className="text-2xl">{isOpened ? '✅' : '🔒'}</span>
           <span className="text-[11px] text-white/80 font-medium">
             {isOpened ? 'Görüntülendi' : 'Gönderildi'}{msg.viewTimer != null && ` · ${isOnce ? '1×' : `${msg.viewTimer}s`}`}
@@ -269,21 +277,37 @@ function ImageMessage({ msg, isMe, onOpen }: {
     );
   }
 
-  return (
-    <button onClick={() => onOpen(msg)} className="relative rounded-[18px] overflow-hidden select-none" style={{ width: 200, height: 150 }}>
-      <AuthImg src={msg.imageUrl!} className="w-full h-full object-cover"
-        style={{ filter: isOpened ? 'blur(0)' : 'blur(16px)', transform: 'scale(1.1)', transition: 'filter 0.4s' }}
-        draggable={false} onContextMenu={(e) => e.preventDefault()} />
-      {!isOpened && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white" style={{ background: 'rgba(0,0,0,0.3)' }}>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(249,115,22,0.9)' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-5 h-5">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-            </svg>
-          </div>
-          <span className="text-xs font-semibold">{msg.viewTimer != null ? (isOnce ? '1× Görüntüle' : `${msg.viewTimer}s`) : 'Görüntüle'}</span>
+  /* Receiver: already opened */
+  if (isOpened) {
+    return (
+      <button onClick={() => onOpen(msg)} className="relative rounded-[18px] overflow-hidden select-none" style={{ width: 200, height: 150, background: '#1a2840' }}>
+        <AuthImg src={msg.imageUrl!} className="w-full h-full object-cover"
+          style={{ filter: 'blur(0)', transition: 'filter 0.4s' }}
+          draggable={false} onContextMenu={(e) => e.preventDefault()} />
+        {/* subtle overlay so the button is always visible */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-opacity"
+          style={{ background: 'rgba(0,0,0,0.4)' }}>
+          <span className="text-xl">🔍</span>
+          <span className="text-[11px] text-white/80">Tekrar Gör</span>
         </div>
-      )}
+      </button>
+    );
+  }
+
+  /* Receiver: not yet opened */
+  return (
+    <button onClick={() => onOpen(msg)} className="relative rounded-[18px] overflow-hidden select-none" style={{ width: 200, height: 150, background: '#1a2840' }}>
+      <AuthImg src={msg.imageUrl!} className="w-full h-full object-cover"
+        style={{ filter: 'blur(16px)', transform: 'scale(1.1)', transition: 'filter 0.4s' }}
+        draggable={false} onContextMenu={(e) => e.preventDefault()} />
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white" style={{ background: 'rgba(0,0,0,0.35)' }}>
+        <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(249,115,22,0.9)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-5 h-5">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <span className="text-xs font-semibold">{msg.viewTimer != null ? (isOnce ? '1× Görüntüle' : `${msg.viewTimer}s`) : 'Görüntüle'}</span>
+      </div>
     </button>
   );
 }

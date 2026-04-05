@@ -51,15 +51,21 @@ app.use('/api', limiter);
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Protected image serving (auth required, no direct URL access)
-app.get('/api/dm-image/:filename', requireAuth, (req: any, res: any) => {
-  const filename = path.basename(req.params.filename);
-  const filePath = path.join(uploadDir, filename);
-  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Bulunamadı' });
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.setHeader('Content-Disposition', 'inline');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.sendFile(path.resolve(filePath));
+// Protected image serving — reads from DB (persists across Railway deploys)
+app.get('/api/dm-image/:id', requireAuth, async (req: any, res: any) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT mime_type, data FROM dm_image_blobs WHERE id = $1',
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Bulunamadı' });
+    res.setHeader('Content-Type', rows[0].mime_type);
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    res.setHeader('Content-Disposition', 'inline');
+    res.send(rows[0].data);
+  } catch (e) {
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
 });
 
 // Rotalar
@@ -74,7 +80,7 @@ app.use('/api/supplements', supplementRoutes);
 
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), v: 'upload-base64-fix' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), v: 'db-image-storage' });
 });
 
 // Hata işleyici

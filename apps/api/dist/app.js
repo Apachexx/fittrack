@@ -12,7 +12,6 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const auth_1 = require("./middleware/auth");
-const upload_1 = require("./middleware/upload");
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const workout_routes_1 = __importDefault(require("./routes/workout.routes"));
 const nutrition_routes_1 = __importDefault(require("./routes/nutrition.routes"));
@@ -48,16 +47,20 @@ app.use('/api', limiter);
 // Body parsing
 app.use(express_1.default.json({ limit: '20mb' }));
 app.use(express_1.default.urlencoded({ extended: true }));
-// Protected image serving (auth required, no direct URL access)
-app.get('/api/dm-image/:filename', auth_1.requireAuth, (req, res) => {
-    const filename = path_1.default.basename(req.params.filename);
-    const filePath = path_1.default.join(upload_1.uploadDir, filename);
-    if (!fs_1.default.existsSync(filePath))
-        return res.status(404).json({ error: 'Bulunamadı' });
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('Content-Disposition', 'inline');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.sendFile(path_1.default.resolve(filePath));
+// Protected image serving — reads from DB (persists across Railway deploys)
+app.get('/api/dm-image/:id', auth_1.requireAuth, async (req, res) => {
+    try {
+        const { rows } = await db_1.default.query('SELECT mime_type, data FROM dm_image_blobs WHERE id = $1', [req.params.id]);
+        if (!rows[0])
+            return res.status(404).json({ error: 'Bulunamadı' });
+        res.setHeader('Content-Type', rows[0].mime_type);
+        res.setHeader('Cache-Control', 'private, max-age=86400');
+        res.setHeader('Content-Disposition', 'inline');
+        res.send(rows[0].data);
+    }
+    catch (e) {
+        res.status(500).json({ error: 'Sunucu hatası' });
+    }
 });
 // Rotalar
 app.use('/api/auth', auth_routes_1.default);
@@ -70,7 +73,7 @@ app.use('/api/settings', settings_routes_1.default);
 app.use('/api/supplements', supplement_routes_1.default);
 // Sağlık kontrolü
 app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString(), v: 'upload-base64-fix' });
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), v: 'db-image-storage' });
 });
 // Hata işleyici
 app.use(error_1.errorHandler);

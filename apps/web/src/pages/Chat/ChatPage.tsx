@@ -725,21 +725,28 @@ function ChatPageInner() {
           const isOnline = onlineUsers.some(u => u.id === f.otherUser.id);
           const cnt = unread[f.otherUser.id] ?? 0;
           return (
-            <button key={f.id} onClick={() => openDM(f.otherUser)}
-              className="w-full flex items-center gap-3 px-4 py-3.5 transition-all active:bg-white/5 hover:bg-white/[0.03]"
+            <div key={f.id} className="flex items-center group"
               style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <Av name={f.otherUser.name} size={48} online={isOnline} />
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-semibold truncate">{f.otherUser.name}</p>
-                <p className="text-xs mt-0.5 truncate" style={{ color: isOnline ? '#4ade80' : 'rgba(255,255,255,0.35)' }}>
-                  {isOnline ? '● çevrimiçi' : lastSeenStr(lastSeenMap[f.otherUser.id])}
-                </p>
-              </div>
-              {cnt > 0 && <div className="badge badge-primary">{cnt > 9 ? '9+' : cnt}</div>}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 opacity-20 shrink-0">
-                <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+              {/* Ana alan → DM aç */}
+              <button onClick={() => openDM(f.otherUser)}
+                className="flex-1 flex items-center gap-3 px-4 py-3.5 transition-all active:bg-white/5 hover:bg-white/[0.03] min-w-0">
+                <Av name={f.otherUser.name} size={48} online={isOnline} />
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-semibold truncate">{f.otherUser.name}</p>
+                  <p className="text-xs mt-0.5 truncate" style={{ color: isOnline ? '#4ade80' : 'rgba(255,255,255,0.35)' }}>
+                    {isOnline ? '● çevrimiçi' : lastSeenStr(lastSeenMap[f.otherUser.id])}
+                  </p>
+                </div>
+                {cnt > 0 && <div className="badge badge-primary">{cnt > 9 ? '9+' : cnt}</div>}
+              </button>
+              {/* ⋯ → mod/profil menüsü */}
+              <button
+                onClick={() => setClickedUser({ id: f.otherUser.id, name: f.otherUser.name })}
+                className="shrink-0 px-3 py-3.5 transition-all active:opacity-60"
+                style={{ color: 'rgba(255,255,255,0.25)', fontSize: 18, lineHeight: 1 }}>
+                ⋯
+              </button>
+            </div>
           );
         })}
       </div>

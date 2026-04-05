@@ -480,18 +480,56 @@ function ChatPageInner() {
   const sendImage = useCallback(async (file: File, timer: number | null) => {
     const dm = activeDMRef.current;
     if (!socket || !connected || !dm) { showToast('Bağlantı yok', 'info'); return; }
+
+    // Client-side size check (base64 is ~33% larger than binary)
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Fotoğraf çok büyük (max 10MB)', 'error');
+      return;
+    }
+
     setUploading(true);
     try {
+      // Compress image before upload if it's large
       const imageData = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+        const img = new Image();
+        const objUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(objUrl);
+          const MAX = 1600; // px
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            const ratio = Math.min(MAX / width, MAX / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          resolve(dataUrl.split(',')[1]);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objUrl);
+          // fallback: send raw file as-is
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        };
+        img.src = objUrl;
       });
-      const { data } = await api.post<{ url: string }>('/chat/dm/upload', { imageData, mimeType: file.type || 'image/jpeg' });
+
+      const { data } = await api.post<{ url: string }>('/chat/dm/upload', {
+        imageData,
+        mimeType: 'image/jpeg',
+      });
       socket.emit('dm:send', { receiverId: dm.id, content: '', imageUrl: data.url, viewTimer: timer });
       setPendingImage(null);
-    } catch { showToast('Fotoğraf gönderilemedi', 'error'); }
+    } catch (e: any) {
+      const serverMsg = e?.response?.data?.error;
+      showToast(serverMsg ? `Hata: ${serverMsg}` : 'Fotoğraf gönderilemedi', 'error');
+      console.error('[sendImage]', e?.response?.status, serverMsg, e?.message);
+    }
     finally { setUploading(false); }
   }, [socket, connected, showToast]);
 

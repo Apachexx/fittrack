@@ -5,6 +5,15 @@ import { NetworkFirst } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope;
 
+// Immediately take control — no waiting for tabs to close
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 // Precache all assets injected by VitePWA
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
@@ -16,7 +25,7 @@ registerRoute(
   )
 );
 
-// Skip waiting on message
+// Skip waiting on message (kept for compatibility)
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -62,14 +71,12 @@ self.addEventListener('notificationclick', (event) => {
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then((clients) => {
-        // Focus existing window if open
         for (const client of clients) {
           if ('focus' in client) {
             client.navigate(url);
             return client.focus();
           }
         }
-        // Open new window
         return self.clients.openWindow(url);
       })
   );

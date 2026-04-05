@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, memo, Component } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '@/api/chat.api';
 import { useSocket } from '@/context/SocketContext';
@@ -6,6 +6,38 @@ import { useAuth } from '@/context/AuthContext';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import api from '@/api/client';
+
+/* ────────── Error Boundary ────────── */
+class ChatErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: '' };
+  }
+  static getDerivedStateFromError(e: Error) {
+    return { hasError: true, error: e.message };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-4 p-6 text-center">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-sm text-gray-400">Sohbet yüklenirken bir hata oluştu</p>
+          <p className="text-xs text-gray-600 font-mono">{this.state.error}</p>
+          <button
+            onClick={() => { this.setState({ hasError: false, error: '' }); window.location.reload(); }}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg,#f97316,#e11d48)' }}>
+            Yenile
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /* ────────── AuthImg: loads auth-protected images via axios ────────── */
 function AuthImg({ src, className, style, draggable, onContextMenu }: React.ImgHTMLAttributes<HTMLImageElement>) {
@@ -48,17 +80,24 @@ interface Word { id: string; word: string; }
 interface Mod { id: string; name: string; is_admin: boolean; is_moderator: boolean; }
 
 /* ────────── helpers ────────── */
-function timeStr(iso: string) { return format(new Date(iso), 'HH:mm', { locale: tr }); }
-function lastSeenStr(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMin = Math.floor((now.getTime() - d.getTime()) / 60000);
-  if (diffMin < 1) return 'az önce çevrimiçiydi';
-  if (diffMin < 60) return `${diffMin} dakika önce görüldü`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `bugün ${format(d, 'HH:mm', { locale: tr })}'de görüldü`;
-  if (diffH < 48) return `dün ${format(d, 'HH:mm', { locale: tr })}'de görüldü`;
-  return format(d, 'd MMM HH:mm', { locale: tr }) + "'de görüldü";
+function timeStr(iso: string | null | undefined) {
+  if (!iso) return '';
+  try { return format(new Date(iso), 'HH:mm', { locale: tr }); } catch { return ''; }
+}
+function lastSeenStr(iso: string | null | undefined) {
+  if (!iso) return 'çevrimdışı';
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return 'çevrimdışı';
+    const now = new Date();
+    const diffMin = Math.floor((now.getTime() - d.getTime()) / 60000);
+    if (diffMin < 1) return 'az önce çevrimiçiydi';
+    if (diffMin < 60) return `${diffMin} dakika önce görüldü`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `bugün ${format(d, 'HH:mm', { locale: tr })}'de görüldü`;
+    if (diffH < 48) return `dün ${format(d, 'HH:mm', { locale: tr })}'de görüldü`;
+    return format(d, 'd MMM HH:mm', { locale: tr }) + "'de görüldü";
+  } catch { return 'çevrimdışı'; }
 }
 function avatarColor(name: string | null | undefined) {
   if (!name) return '#6b7280';
@@ -448,7 +487,7 @@ function BanModal({ user, meIsAdmin, onClose, onBan }: {
 }
 
 /* ────────── Main ────────── */
-export default function ChatPage() {
+function ChatPageInner() {
   const { user } = useAuth();
   const { socket, connected } = useSocket();
   const qc = useQueryClient();
@@ -1478,5 +1517,13 @@ export default function ChatPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <ChatErrorBoundary>
+      <ChatPageInner />
+    </ChatErrorBoundary>
   );
 }

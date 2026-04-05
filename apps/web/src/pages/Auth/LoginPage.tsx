@@ -18,8 +18,13 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate('/');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Giriş başarısız');
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.error || err?.response?.data?.message;
+      if (status === 429) setError('Çok fazla deneme. Lütfen birkaç dakika bekleyin.');
+      else if (status === 401) setError('E-posta veya şifre hatalı.');
+      else if (serverMsg) setError(serverMsg);
+      else setError('Giriş başarısız. İnternet bağlantınızı kontrol edin.');
     } finally {
       setLoading(false);
     }

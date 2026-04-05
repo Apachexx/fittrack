@@ -39,13 +39,26 @@ app.use(cors({
 }));
 
 // Rate limiting
+// Genel limit: 1000 istek / 15 dakika (chat + socket polling için yeterli)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
+  message: { error: 'Çok fazla istek. Lütfen biraz bekleyin.' },
 });
 app.use('/api', limiter);
+
+// Auth endpoint'leri için ayrı daha sıkı limit (brute-force koruması)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Body parsing
 app.use(express.json({ limit: '20mb' }));

@@ -615,7 +615,7 @@ function ChatPageInner() {
         <div className="chat-header text-xs opacity-50 mb-0.5 flex items-center gap-1">
           {!isMe && name && (
             onNameClick
-              ? <button onClick={onNameClick} className="font-semibold hover:underline active:opacity-70" style={{ color: avatarColor(name) }}>{name}</button>
+              ? <button onClick={onNameClick} style={{ color: avatarColor(name), fontWeight: 600, padding: '2px 4px', margin: '-2px -4px', borderRadius: 6, WebkitTapHighlightColor: 'transparent' }} className="active:opacity-60">{name}</button>
               : <span className="font-semibold" style={{ color: avatarColor(name) }}>{name}</span>
           )}
           <span>{time}</span>
@@ -654,12 +654,11 @@ function ChatPageInner() {
 
   const dmMsgList = dmMsgs.map(msg => {
     const isMe = msg.senderId === user?.id;
-    const canAct = !isMe && (isAdmin || isMod) && msg.senderId;
     return (
       <Bubble key={msg.id} isMe={isMe} name={!isMe ? msg.senderName : undefined}
         content={msg.msgType === 'image' ? <ImageMessage msg={msg} isMe={isMe} onOpen={openImage} /> : msg.content}
         time={timeStr(msg.createdAt)} isRead={msg.isRead}
-        onNameClick={canAct ? () => setClickedUser({ id: msg.senderId!, name: msg.senderName }) : undefined}
+        onNameClick={!isMe && msg.senderId ? () => setClickedUser({ id: msg.senderId!, name: msg.senderName }) : undefined}
       />
     );
   });

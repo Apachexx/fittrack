@@ -105,13 +105,13 @@ if (fs.existsSync(webDistPath)) {
     res.setHeader('Expires', '0');
     next();
   };
-  // sw.js and index.html must NEVER be cached
-  app.use('/sw.js', noCache);
   app.use(express.static(webDistPath, {
     setHeaders(res, filePath) {
-      // Hashed assets can be cached forever; HTML must be fresh
-      if (filePath.endsWith('.html')) {
+      // SW and HTML must never be cached; hashed assets are immutable
+      if (filePath.endsWith('.html') || filePath.endsWith('sw.js') || filePath.endsWith('manifest.webmanifest')) {
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
       } else {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }

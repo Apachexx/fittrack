@@ -357,6 +357,7 @@ function ChatPageInner() {
   const [uploading, setUploading] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmRemoveFriend, setConfirmRemoveFriend] = useState<{ id: string; name: string } | null>(null);
+  const [clickedUser, setClickedUser] = useState<{ id: string; name: string; msgId?: string } | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'error' | 'info' | 'success'>('error');
   const [userSearch, setUserSearch] = useState('');
@@ -605,13 +606,18 @@ function ChatPageInner() {
   );
 
   /* ── Shared: Message bubble ── */
-  function Bubble({ isMe, name, content, time, isRead }: {
+  function Bubble({ isMe, name, content, time, isRead, onNameClick }: {
     isMe: boolean; name?: string; content: React.ReactNode; time: string; isRead?: boolean;
+    onNameClick?: () => void;
   }) {
     return (
       <div className={`chat ${isMe ? 'chat-end' : 'chat-start'} py-0.5`}>
         <div className="chat-header text-xs opacity-50 mb-0.5 flex items-center gap-1">
-          {!isMe && name && <span className="font-semibold" style={{ color: avatarColor(name) }}>{name}</span>}
+          {!isMe && name && (
+            onNameClick
+              ? <button onClick={onNameClick} className="font-semibold hover:underline active:opacity-70" style={{ color: avatarColor(name) }}>{name}</button>
+              : <span className="font-semibold" style={{ color: avatarColor(name) }}>{name}</span>
+          )}
           <span>{time}</span>
           {isMe && <span style={{ fontSize: 10, color: isRead ? '#60a5fa' : 'rgba(255,255,255,0.4)' }}>{isRead ? '✓✓' : '✓'}</span>}
         </div>
@@ -626,16 +632,22 @@ function ChatPageInner() {
   /* ── Shared: Message list ── */
   const publicMsgList = publicMsgs.map(msg => {
     const isMe = msg.userId === user?.id;
+    const canAct = !isMe && (isAdmin || isMod) && msg.userId;
     return (
       <div key={msg.id} className="group">
-        <Bubble isMe={isMe} name={!isMe ? msg.userName : undefined} content={msg.content} time={timeStr(msg.createdAt)} />
-        <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} gap-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity -mt-1 mb-1`}>
-          {isMe && <button onClick={() => deleteOwnMsg(msg.id)} className="btn btn-ghost btn-xs text-error py-0 h-5 min-h-0">🗑</button>}
-          {!isMe && (isAdmin || isMod) && <>
-            <button onClick={() => deleteMsgAdmin(msg.id)} className="btn btn-ghost btn-xs text-error py-0 h-5 min-h-0">🗑 Sil</button>
-            <button onClick={() => setBanTarget({ id: msg.userId!, name: msg.userName })} className="btn btn-ghost btn-xs text-warning py-0 h-5 min-h-0">🚫</button>
-          </>}
-        </div>
+        <Bubble
+          isMe={isMe}
+          name={!isMe ? msg.userName : undefined}
+          content={msg.content}
+          time={timeStr(msg.createdAt)}
+          onNameClick={canAct ? () => setClickedUser({ id: msg.userId!, name: msg.userName, msgId: msg.id }) : undefined}
+        />
+        {/* Own message delete — long-press friendly tap target */}
+        {isMe && (
+          <div className="flex justify-end px-2 -mt-1 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => deleteOwnMsg(msg.id)} className="btn btn-ghost btn-xs text-error py-0 h-5 min-h-0">🗑</button>
+          </div>
+        )}
       </div>
     );
   });
@@ -920,6 +932,53 @@ function ChatPageInner() {
             <div className="modal-action justify-center gap-2">
               <button onClick={() => setConfirmRemoveFriend(null)} className="btn btn-ghost btn-sm">İptal</button>
               <button onClick={() => { removeFriend(confirmRemoveFriend.id); setConfirmRemoveFriend(null); }} className="btn btn-error btn-sm">Çıkar</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── User Action Modal (mod/admin: tıklanan kullanıcı üzerinde işlem) ── */}
+      {clickedUser && (
+        <div className="modal modal-open modal-bottom sm:modal-middle" onClick={() => setClickedUser(null)}>
+          <div className="modal-box p-0 overflow-hidden" style={{ background: '#0c1420', maxWidth: 320 }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.07]">
+              <Av name={clickedUser.name} size={44} />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm truncate">{clickedUser.name}</p>
+                <p className="text-xs opacity-40 mt-0.5">
+                  {onlineUsers.some(u => u.id === clickedUser.id) ? '● çevrimiçi' : 'çevrimdışı'}
+                </p>
+              </div>
+              <button onClick={() => setClickedUser(null)} className="opacity-40 hover:opacity-100 text-lg px-1">✕</button>
+            </div>
+            {/* Actions */}
+            <div className="p-3 flex flex-col gap-2">
+              {clickedUser.msgId && (
+                <button
+                  onClick={() => { deleteMsgAdmin(clickedUser.msgId!); setClickedUser(null); }}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-error transition-all active:bg-white/5"
+                  style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                  🗑 Bu mesajı sil
+                </button>
+              )}
+              <button
+                onClick={() => { setBanTarget({ id: clickedUser.id, name: clickedUser.name }); setClickedUser(null); }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-warning transition-all active:bg-white/5"
+                style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                🚫 Banla / Sustur
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    const already = modIds.includes(clickedUser.id);
+                    setMod(clickedUser.id, !already);
+                    setClickedUser(null);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-info transition-all active:bg-white/5"
+                  style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                  🛡 {modIds.includes(clickedUser.id) ? 'Moderatörlüğü Kaldır' : 'Moderatör Yap'}
+                </button>
+              )}
             </div>
           </div>
         </div>

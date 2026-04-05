@@ -39,14 +39,13 @@ app.use(cors({
 }));
 
 // Rate limiting
-// Genel limit: 500 istek / 15 dakika
+// Genel limit: 2000 istek / 15 dakika
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500,
+  max: 2000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Çok fazla istek. Lütfen biraz bekleyin.' },
-  skip: (req) => req.path.startsWith('/auth/'), // auth endpoint'leri limit dışı
 });
 app.use('/api', limiter);
 

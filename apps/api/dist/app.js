@@ -37,11 +37,13 @@ app.use((0, cors_1.default)({
     credentials: true,
 }));
 // Rate limiting
+// Genel limit: 2000 istek / 15 dakika
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
-    max: 200,
+    max: 2000,
     standardHeaders: true,
     legacyHeaders: false,
+    message: { error: 'Çok fazla istek. Lütfen biraz bekleyin.' },
 });
 app.use('/api', limiter);
 // Body parsing

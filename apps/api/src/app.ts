@@ -83,12 +83,26 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), v: 'db-image-storage' });
 });
 
+// Deploy version endpoint — changes on every server restart (= every deploy)
+// Client uses this to detect new deploys and force cache clear
+const SERVER_START_VERSION = Date.now().toString();
+app.get('/api/version', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.json({ v: SERVER_START_VERSION });
+});
+
 // Hata işleyici
 app.use(errorHandler);
 
 // Production: web static dosyalarını servis et
 const webDistPath = path.join(__dirname, '../../web/dist');
 if (fs.existsSync(webDistPath)) {
+  // sw.js must NEVER be cached — browser must always fetch the latest SW
+  app.use('/sw.js', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    next();
+  });
   app.use(express.static(webDistPath));
   app.get('*', (_req, res) => {
     res.sendFile(path.join(webDistPath, 'index.html'));

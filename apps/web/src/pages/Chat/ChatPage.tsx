@@ -60,14 +60,18 @@ function lastSeenStr(iso: string) {
   if (diffH < 48) return `dün ${format(d, 'HH:mm', { locale: tr })}'de görüldü`;
   return format(d, 'd MMM HH:mm', { locale: tr }) + "'de görüldü";
 }
-function avatarColor(name: string) {
+function avatarColor(name: string | null | undefined) {
+  if (!name) return '#6b7280';
   const colors = ['#f97316','#3b82f6','#22c55e','#a855f7','#ec4899','#14b8a6','#f59e0b'];
   let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) % colors.length;
   return colors[h];
 }
-function initials(name: string) { return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase(); }
+function initials(name: string | null | undefined) {
+  if (!name) return '?';
+  return name.split(' ').map((n) => n[0] ?? '').filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+}
 
-function Avatar({ name, size = 8 }: { name: string; size?: number }) {
+function Avatar({ name, size = 8 }: { name: string | null | undefined; size?: number }) {
   const c = avatarColor(name);
   const px = size * 4;
   return (

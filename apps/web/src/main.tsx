@@ -38,10 +38,25 @@ async function checkServerVersion() {
 checkServerVersion();
 
 // ── SW registration ───────────────────────────────────────────────────────
+// Track whether a SW update is pending — reload only at a safe moment
+let swUpdatePending = false;
+
+function safeReload() {
+  // Don't reload if a modal/overlay is open (e.g. image viewer, dialogs)
+  // Check for any open DaisyUI modals or our custom overlay
+  const hasModal = document.querySelector('.modal-open, [data-viewer-open]');
+  if (hasModal) {
+    // Retry after next page visibility change instead
+    swUpdatePending = true;
+    return;
+  }
+  window.location.reload();
+}
+
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    // New SW is ready — activate immediately without prompting the user
+    // New SW waiting — activate it, but reload only at a safe moment
     updateSW(true);
   },
   onRegisteredSW(_url, registration) {
@@ -55,12 +70,20 @@ const updateSW = registerSW({
   },
 });
 
-// When a new SW takes control, reload to serve fresh assets
+// When a new SW takes control, reload — but wait for a safe moment
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
+    safeReload();
   });
 }
+
+// If a reload was deferred, do it next time the user comes back to the app
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && swUpdatePending) {
+    swUpdatePending = false;
+    safeReload();
+  }
+});
 
 // ── App ───────────────────────────────────────────────────────────────────
 const queryClient = new QueryClient({

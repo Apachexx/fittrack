@@ -196,7 +196,7 @@ const ImageViewer = memo(({ url, senderName, timer, onClose }: {
     return () => { document.removeEventListener('contextmenu', p); document.removeEventListener('keydown', k); };
   }, []);
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.95)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.95)' }} onClick={onClose} data-viewer-open="1">
       <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
         {Array.from({ length: 12 }).map((_, i) => (
           <div key={i} className="absolute text-white/[0.08] text-xs font-bold whitespace-nowrap"

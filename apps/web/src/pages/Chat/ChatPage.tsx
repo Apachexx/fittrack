@@ -44,7 +44,7 @@ function AuthImg({ src, className, style, draggable, onContextMenu }
     setBlobUrl(null); setFailed(false);
     if (!src) return;
     let url: string;
-    api.get(src.replace('/api/', '/'), { responseType: 'blob' })
+    api.get(src.replace(/^\/api\//, ''), { responseType: 'blob' })
       .then(r => { url = URL.createObjectURL(r.data); setBlobUrl(url); })
       .catch(() => setFailed(true));
     return () => { if (url) URL.revokeObjectURL(url); };
@@ -325,6 +325,7 @@ function ChatPageInner() {
   const [pendingImage, setPendingImage] = useState<{ file: File; preview: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmRemoveFriend, setConfirmRemoveFriend] = useState<{ id: string; name: string } | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'error' | 'info' | 'success'>('error');
   const [userSearch, setUserSearch] = useState('');
@@ -673,7 +674,7 @@ function ChatPageInner() {
             <ul tabIndex={0} className="dropdown-content menu shadow-xl rounded-2xl z-50 w-44 p-1"
               style={{ background: '#1a2332', border: '1px solid rgba(255,255,255,0.1)' }}>
               <li><a className="text-sm py-2" onClick={() => setDmMsgs([])}>🗑 Mesajları Temizle</a></li>
-              <li><a className="text-sm py-2 text-error" onClick={() => removeFriend(activeDM.id)}>👤 Arkadaşlıktan Çıkar</a></li>
+              <li><a className="text-sm py-2 text-error" onClick={() => setConfirmRemoveFriend({ id: activeDM.id, name: activeDM.name })}>👤 Arkadaşlıktan Çıkar</a></li>
             </ul>
           </div>
         </div>
@@ -790,6 +791,19 @@ function ChatPageInner() {
             <div className="modal-action justify-center gap-2">
               <button onClick={() => setConfirmClear(false)} className="btn btn-ghost btn-sm">İptal</button>
               <button onClick={doClearChat} className="btn btn-error btn-sm">Temizle</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmRemoveFriend && (
+        <div className="modal modal-open modal-middle">
+          <div className="modal-box text-center" style={{ background: '#0c1420' }}>
+            <p className="text-3xl mb-2">👤</p>
+            <h3 className="font-bold text-lg">Arkadaşlıktan Çıkar</h3>
+            <p className="text-sm opacity-50 my-3"><b>{confirmRemoveFriend.name}</b> kişisini arkadaş listenden çıkarmak istediğine emin misin?</p>
+            <div className="modal-action justify-center gap-2">
+              <button onClick={() => setConfirmRemoveFriend(null)} className="btn btn-ghost btn-sm">İptal</button>
+              <button onClick={() => { removeFriend(confirmRemoveFriend.id); setConfirmRemoveFriend(null); }} className="btn btn-error btn-sm">Çıkar</button>
             </div>
           </div>
         </div>

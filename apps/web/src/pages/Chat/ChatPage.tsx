@@ -229,11 +229,15 @@ const ImageViewer = memo(({ url, senderName, timer, onClose }: {
   // Block right-click and keyboard shortcuts
   useEffect(() => {
     const prevent = (e: Event) => e.preventDefault();
-    document.addEventListener('contextmenu', prevent);
-    document.addEventListener('keydown', (e) => {
+    const preventKeys = (e: KeyboardEvent) => {
       if (e.key === 'PrintScreen' || (e.ctrlKey && (e.key === 's' || e.key === 'p'))) e.preventDefault();
-    });
-    return () => document.removeEventListener('contextmenu', prevent);
+    };
+    document.addEventListener('contextmenu', prevent);
+    document.addEventListener('keydown', preventKeys);
+    return () => {
+      document.removeEventListener('contextmenu', prevent);
+      document.removeEventListener('keydown', preventKeys);
+    };
   }, []);
 
   return (
@@ -500,6 +504,18 @@ function ChatPageInner() {
   const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
   const [dmMenuOpen, setDmMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastColor, setToastColor] = useState<string>('rgba(239,68,68,0.92)');
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useCallback((msg: string, type: 'error' | 'info' | 'success' = 'error') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastColor(
+      type === 'error' ? 'rgba(239,68,68,0.92)' :
+      type === 'success' ? 'rgba(34,197,94,0.92)' :
+      'rgba(59,130,246,0.92)'
+    );
+    setToastMsg(msg);
+    toastTimerRef.current = setTimeout(() => setToastMsg(null), 3500);
+  }, []);
   const [input, setInput] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -507,6 +523,7 @@ function ChatPageInner() {
   const [popup, setPopup] = useState<{ user: { id: string; name: string; isAdmin?: boolean }; pos: { x: number; y: number } } | null>(null);
   const [unread, setUnread] = useState<Record<string, number>>({});
   const [newWord, setNewWord] = useState('');
+  const [confirmClear, setConfirmClear] = useState(false);
   const [sentRequestIds, setSentRequestIds] = useState<string[]>([]);
   const [modIds, setModIds] = useState<string[]>([]);
   const [viewerMsg, setViewerMsg] = useState<DM | null>(null);
@@ -635,8 +652,7 @@ function ChatPageInner() {
     });
 
     socket.on('error', ({ message }: { message: string }) => {
-      setToastMsg(message);
-      setTimeout(() => setToastMsg(null), 4000);
+      showToast(message, 'error');
     });
 
     return () => {
@@ -669,8 +685,7 @@ function ChatPageInner() {
   const sendImage = useCallback(async (file: File, timer: number | null) => {
     const dm = activeDMRef.current;
     if (!socket || !connected || !dm) {
-      setToastMsg('Bağlantı yok, lütfen bekleyin...');
-      setTimeout(() => setToastMsg(null), 3000);
+      showToast('Bağlantı yok, lütfen bekleyin...', 'info');
       return;
     }
     setUploading(true);
@@ -697,8 +712,7 @@ function ChatPageInner() {
       setPendingImage(null);
     } catch (e: any) {
       console.error('image upload failed', e);
-      setToastMsg('Fotoğraf gönderilemedi: ' + (e?.message || 'Bilinmeyen hata'));
-      setTimeout(() => setToastMsg(null), 4000);
+      showToast('Fotoğraf gönderilemedi: ' + (e?.message || 'Bilinmeyen hata'), 'error');
     } finally {
       setUploading(false);
     }
@@ -718,7 +732,8 @@ function ChatPageInner() {
   }
   function deleteOwnMsg(messageId: string) { socket?.emit('msg:delete_own', { messageId }); }
   function deleteMsgAsAdmin(messageId: string) { socket?.emit('admin:delete_msg', { messageId }); }
-  function clearChat() { if (confirm('Tüm sohbet mesajları silinecek. Emin misin?')) socket?.emit('admin:clear_chat'); }
+  function clearChat() { setConfirmClear(true); }
+  function doClearChat() { socket?.emit('admin:clear_chat'); setConfirmClear(false); }
   function setMod(targetId: string, val: boolean) { socket?.emit('admin:set_mod', { targetId, value: val }); refetchMods(); }
   function sendFriendRequest(id: string) { socket?.emit('friend:request', { addresseeId: id }); setSentRequestIds((p) => [...p, id]); }
   function acceptRequest(id: string) { socket?.emit('friend:accept', { friendshipId: id }); qc.invalidateQueries({ queryKey: ['chat-requests'] }); qc.invalidateQueries({ queryKey: ['chat-friends'] }); }
@@ -1054,15 +1069,34 @@ function ChatPageInner() {
 
   /* ─── MOBILE LAYOUT ─────────────────────────────────────────────── */
   const toastEl = toastMsg ? (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 rounded-2xl text-sm font-medium text-white shadow-2xl pointer-events-none"
-      style={{ background: 'rgba(239,68,68,0.92)', backdropFilter: 'blur(8px)', maxWidth: '90vw', textAlign: 'center' }}>
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 rounded-2xl text-sm font-medium text-white shadow-2xl pointer-events-none transition-all"
+      style={{ background: toastColor, backdropFilter: 'blur(8px)', maxWidth: '90vw', textAlign: 'center' }}>
       {toastMsg}
+    </div>
+  ) : null;
+
+  const confirmClearModal = confirmClear ? (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}
+      onClick={() => setConfirmClear(false)}>
+      <div className="w-full max-w-xs mx-4 rounded-2xl p-5 text-center" onClick={(e) => e.stopPropagation()}
+        style={{ background: '#0c1420', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <span className="text-3xl">🗑️</span>
+        <h3 className="text-base font-semibold text-white mt-2 mb-1">Sohbeti Temizle</h3>
+        <p className="text-xs text-gray-400 mb-4">Tüm genel sohbet mesajları kalıcı olarak silinecek.</p>
+        <div className="flex gap-2">
+          <button onClick={() => setConfirmClear(false)} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400"
+            style={{ background: 'rgba(255,255,255,0.06)' }}>İptal</button>
+          <button onClick={doClearChat} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+            style={{ background: '#ef4444' }}>Temizle</button>
+        </div>
+      </div>
     </div>
   ) : null;
 
   const mobileModals = (
     <>
       {toastEl}
+      {confirmClearModal}
       {banTarget && <BanModal user={banTarget} meIsAdmin={isAdmin} onClose={() => setBanTarget(null)} onBan={doBan} />}
       {popup && <UserPopup user={popup.user} pos={popup.pos} meId={user?.id ?? ''} meIsAdmin={isAdmin} meIsMod={isMod} friends={friends as Friend[]} sentIds={sentRequestIds} modIds={modIds} onRequest={sendFriendRequest} onRemoveFriend={removeFriend} onClose={() => setPopup(null)} onSetMod={setMod} onBanTarget={(u) => setBanTarget(u)} />}
       {pendingImage && <ImageSendPreview file={pendingImage.file} preview={pendingImage.preview} uploading={uploading} onSend={sendImage} onClose={() => { setPendingImage(null); URL.revokeObjectURL(pendingImage.preview); }} />}
@@ -1131,7 +1165,7 @@ function ChatPageInner() {
               );
             })()}
             <div className="flex items-center gap-1 relative">
-              <button onClick={() => alert('Sesli arama özelliği yakında geliyor! 🎙️')}
+              <button onClick={() => showToast('Sesli arama yakında geliyor! 🎙️', 'info')}
                 className="w-9 h-9 rounded-full flex items-center justify-center" style={{ color: '#9ca3af' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
               </button>
@@ -1229,8 +1263,13 @@ function ChatPageInner() {
                 {(requests as PendingReq[]).map((r) => (
                   <div key={r.id} className="flex items-center gap-3 py-2">
                     <Avatar name={r.requester_name} size={9} />
-                    <span className="flex-1 text-sm text-white">{r.requester_name}</span>
-                    <button onClick={() => acceptRequest(r.id)} className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white" style={{ background: '#f97316' }}>Kabul</button>
+                    <span className="flex-1 text-sm text-white truncate">{r.requester_name}</span>
+                    <button onClick={() => acceptRequest(r.id)}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center text-green-400 shrink-0"
+                      style={{ background: 'rgba(34,197,94,0.15)' }}>✓</button>
+                    <button onClick={() => rejectRequest(r.id)}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center text-red-400 shrink-0"
+                      style={{ background: 'rgba(239,68,68,0.15)' }}>✕</button>
                   </div>
                 ))}
               </div>
@@ -1256,7 +1295,9 @@ function ChatPageInner() {
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-semibold text-white truncate">{u.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{isOnline ? 'çevrimiçi' : 'çevrimdışı'}</p>
+                    <p className="text-xs mt-0.5" style={{ color: isOnline ? '#4ade80' : '#6b7280' }}>
+                      {isOnline ? 'çevrimiçi' : lastSeenStr(lastSeenMap[u.id])}
+                    </p>
                   </div>
                   {unreadCount > 0 && (
                     <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: '#f97316' }}>
@@ -1329,6 +1370,7 @@ function ChatPageInner() {
   return (
     <div className="flex flex-col flex-1 min-h-0" style={{ height: '100%' }}>
       {toastEl}
+      {confirmClearModal}
       {banTarget && <BanModal user={banTarget} meIsAdmin={isAdmin} onClose={() => setBanTarget(null)} onBan={doBan} />}
       {popup && (
         <UserPopup
@@ -1406,7 +1448,7 @@ function ChatPageInner() {
             {(tab === 'dm' && activeDM) && (
               <div className="flex items-center gap-1 relative">
                 <button
-                  onClick={() => alert('Sesli arama özelliği yakında geliyor! 🎙️')}
+                  onClick={() => showToast('Sesli arama yakında geliyor! 🎙️', 'info')}
                   className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style={{ color: '#9ca3af' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>

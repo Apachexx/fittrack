@@ -167,15 +167,18 @@ function ImageSendPreview({ file, preview, uploading, onSend, onClose }: {
 const ImageViewer = memo(({ url, senderName, timer, onClose }: {
   url: string; senderName: string; timer: number | null; onClose: () => void;
 }) => {
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
   const [remaining, setRemaining] = useState<number | null>(
     timer != null ? (timer === 0 ? 10 : timer) : null
   );
+  // Use ref for onClose so changing parent renders don't restart the timer
   useEffect(() => {
     if (remaining === null) return;
-    if (remaining <= 0) { onClose(); return; }
+    if (remaining <= 0) { onCloseRef.current(); return; }
     const t = setTimeout(() => setRemaining(r => (r ?? 1) - 1), 1000);
     return () => clearTimeout(t);
-  }, [remaining, onClose]);
+  }, [remaining]); // intentionally omit onClose — use ref instead
   useEffect(() => {
     const p = (e: Event) => e.preventDefault();
     const k = (e: KeyboardEvent) => { if (e.key === 'PrintScreen' || (e.ctrlKey && 'sp'.includes(e.key))) e.preventDefault(); };
@@ -233,15 +236,15 @@ function ImageMessage({ msg, isMe, onOpen }: { msg: DM; isMe: boolean; onOpen: (
     </div>
   );
 
+  // Receiver viewed it — show WhatsApp-style "Açıldı" pill, no re-viewing
   if (isOpened) return (
-    <button onClick={() => onOpen(msg)} style={{ ...base, cursor: 'pointer', border: 'none', padding: 0 }}>
-      <AuthImg src={msg.imageUrl!} style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} />
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.35)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0)')}>
-        <span style={{ fontSize: 22, opacity: 0 }}>🔍</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <span style={{ fontSize: 15 }}>🖼️</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>Fotoğraf</span>
+        <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 500 }}>✓ Açıldı</span>
       </div>
-    </button>
+    </div>
   );
 
   return (
@@ -309,10 +312,15 @@ function ChatPageInner() {
   const { socket, connected } = useSocket();
   const qc = useQueryClient();
 
-  const [tab, setTab] = useState<'public' | 'dm' | 'admin'>('public');
+  const [tab, setTab] = useState<'public' | 'dm' | 'admin'>(() => {
+    try { return (sessionStorage.getItem('chat_tab') as 'public' | 'dm' | 'admin') || 'public'; } catch { return 'public'; }
+  });
   const [publicMsgs, setPublicMsgs] = useState<Msg[]>([]);
   const [dmMsgs, setDmMsgs] = useState<DM[]>([]);
-  const [activeDM, setActiveDM] = useState<{ id: string; name: string } | null>(null);
+  const [activeDM, setActiveDM] = useState<{ id: string; name: string } | null>(() => {
+    try { const s = sessionStorage.getItem('chat_activeDM'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [showOnlinePanel, setShowOnlinePanel] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<{ id: string; name: string; is_mod: boolean; is_admin: boolean }[]>([]);
   const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
   const [unread, setUnread] = useState<Record<string, number>>({});
@@ -358,6 +366,15 @@ function ChatPageInner() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [publicMsgs.length, dmMsgs.length]);
+
+  // Persist tab + activeDM across SW-triggered page reloads
+  useEffect(() => { try { sessionStorage.setItem('chat_tab', tab); } catch {} }, [tab]);
+  useEffect(() => {
+    try {
+      if (activeDM) sessionStorage.setItem('chat_activeDM', JSON.stringify(activeDM));
+      else sessionStorage.removeItem('chat_activeDM');
+    } catch {}
+  }, [activeDM]);
 
   /* ── Queries ── */
   const { data: meData } = useQuery({ queryKey: ['chat-me'], queryFn: chatApi.getMe, staleTime: 60_000 });
@@ -708,15 +725,45 @@ function ChatPageInner() {
   /* ── Public chat view ── */
   const publicChatView = (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="shrink-0 flex items-center gap-3 px-4 py-2.5"
+      {/* Clickable header → shows online users */}
+      <button onClick={() => setShowOnlinePanel(p => !p)}
+        className="shrink-0 flex items-center gap-3 px-4 py-2.5 w-full text-left transition-all active:bg-white/5"
         style={{ background: '#111f2e', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-lg"
           style={{ background: 'linear-gradient(135deg,#f97316,#e11d48)' }}>💬</div>
-        <div>
+        <div className="flex-1">
           <p className="text-sm font-semibold">Genel Sohbet</p>
-          <p className="text-xs opacity-40">{onlineUsers.length} kişi çevrimiçi</p>
+          <p className="text-xs" style={{ color: '#4ade80' }}>● {onlineUsers.length} kişi çevrimiçi</p>
         </div>
-      </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+          className="w-4 h-4 opacity-30 transition-transform shrink-0"
+          style={{ transform: showOnlinePanel ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {/* Online users panel */}
+      {showOnlinePanel && (
+        <div className="shrink-0 border-b border-white/[0.06]" style={{ background: '#0a1520', maxHeight: 220, overflowY: 'auto' }}>
+          {onlineUsers.length === 0
+            ? <p className="text-xs opacity-30 text-center py-4">Çevrimiçi kullanıcı yok</p>
+            : onlineUsers.map(u => (
+              <div key={u.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04]">
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <Av name={u.name} size={34} />
+                  <div style={{ position: 'absolute', bottom: 1, right: 1, width: 9, height: 9, borderRadius: '50%', background: '#4ade80', border: '2px solid #0a1520' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium truncate block">{u.name}</span>
+                </div>
+                {u.is_admin && <span className="badge badge-error badge-xs">Admin</span>}
+                {u.is_mod && !u.is_admin && <span className="badge badge-info badge-xs">Mod</span>}
+              </div>
+            ))
+          }
+        </div>
+      )}
+
       <div className="flex-1 min-h-0 overflow-y-auto py-2 px-1" style={{ background: '#0d1826' }}>
         {publicMsgs.length === 0 && <p className="text-center opacity-30 text-sm mt-8">Henüz mesaj yok</p>}
         {publicMsgList}
@@ -842,7 +889,7 @@ function ChatPageInner() {
             ...(isAdmin || isMod ? [{ key: 'admin', label: '🛡' }] : []),
           ].map(t => (
             <button key={t.key}
-              onClick={() => { setTab(t.key as 'public' | 'dm' | 'admin'); if (t.key !== 'dm') setActiveDM(null); }}
+              onClick={() => setTab(t.key as 'public' | 'dm' | 'admin')}
               className={`btn btn-sm rounded-full ${tab === t.key ? 'btn-primary' : 'btn-ghost opacity-50'}`}>
               {t.label}
             </button>

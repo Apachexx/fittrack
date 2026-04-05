@@ -23,7 +23,7 @@ export default function ProgramListPage() {
   const queryClient = useQueryClient();
   const [levelFilter, setLevelFilter] = useState('');
   const [goalFilter, setGoalFilter] = useState('');
-  const { data: programs, isLoading } = useQuery({
+  const { data: programs, isLoading, isFetching } = useQuery({
     queryKey: ['programs', levelFilter, goalFilter],
     queryFn: () => programApi.list({
       level: levelFilter || undefined,
@@ -44,7 +44,7 @@ export default function ProgramListPage() {
     },
   });
 
-  if (isLoading) {
+  if (isLoading && !programs) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />

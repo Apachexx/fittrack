@@ -5,16 +5,8 @@ import { NetworkFirst } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Immediately take control — no waiting for tabs to close
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-// Precache all assets injected by VitePWA
+// Precache all assets injected by VitePWA — must run before skipWaiting
+// so new assets are in cache before the SW takes control.
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
@@ -24,6 +16,16 @@ registerRoute(
     new NetworkFirst({ networkTimeoutSeconds: 3, cacheName: 'navigation' })
   )
 );
+
+// Immediately take control after precaching completes
+// event.waitUntil ensures skipWaiting runs AFTER install finishes
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
 // Skip waiting on message (kept for compatibility)
 self.addEventListener('message', (event) => {

@@ -8,10 +8,30 @@ import { router } from '@/router';
 import { registerSW } from 'virtual:pwa-register';
 import './index.css';
 
-// With autoUpdate + skipWaiting + clientsClaim, the new SW activates
-// immediately. The controllerchange fires and reloads the page.
-registerSW({ immediate: true });
+// registerSW handles SW registration + auto-update polling
+const updateSW = registerSW({
+  immediate: true,
+  // When a new SW is ready, reload immediately (no user prompt)
+  onNeedRefresh() {
+    updateSW(true);
+  },
+  onRegisteredSW(_url, registration) {
+    if (!registration) return;
 
+    // Check for updates every 60 seconds (important for iOS PWA which
+    // does NOT reliably poll for SW updates on its own)
+    setInterval(() => registration.update(), 60_000);
+
+    // Also check whenever the user switches back to the app
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        registration.update();
+      }
+    });
+  },
+});
+
+// controllerchange = new SW took control → reload to get fresh assets
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     window.location.reload();

@@ -239,46 +239,48 @@ function ImageMessage({ msg, isMe, onOpen }: { msg: DM; isMe: boolean; onOpen: (
   const isOpened = !!msg.viewedAt;
   const isExpired = msg.expiresAt ? new Date(msg.expiresAt) < new Date() : false;
   const isOnce = msg.viewTimer === 0;
-  const base: React.CSSProperties = { width: 200, height: 150, borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#1a2840', flexShrink: 0, display: 'block' };
-
-  if (isExpired) return (
-    <div style={{ ...base, height: 72, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, border: '1px solid rgba(255,255,255,0.1)' }}>
-      <span>🔒</span><span style={{ fontSize: 11, opacity: 0.5 }}>Süresi doldu</span>
-    </div>
-  );
-
-  if (isMe) return (
-    <div style={base}>
-      <AuthImg src={msg.imageUrl!} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(14px)', transform: 'scale(1.1)' }} draggable={false} />
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-        <span style={{ fontSize: 24 }}>{isOpened ? '✅' : '🔒'}</span>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
-          {isOpened ? 'Görüntülendi' : 'Gönderildi'}{msg.viewTimer != null && ` · ${isOnce ? '1×' : `${msg.viewTimer}s`}`}
-        </span>
-      </div>
-    </div>
-  );
-
-  // Receiver viewed a timed photo — show "Açıldı" pill, no re-viewing
-  // Infinite (no timer) photos are always re-viewable
   const hasTimer = msg.viewTimer != null;
-  if (isOpened && hasTimer) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-      <span style={{ fontSize: 15 }}>📸</span>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>Fotoğraf</span>
-        <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 500 }}>✓ Açıldı</span>
+  const base: React.CSSProperties = { width: 200, height: 150, borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#1a2840', flexShrink: 0, display: 'block' };
+  const timerLabel = hasTimer ? ` · ${isOnce ? '1×' : `${msg.viewTimer}s`}` : '';
+
+  // Shared card style — same look for both sender and receiver after a timed photo is opened
+  const OpenedCard = ({ label }: { label: string }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+      <span style={{ fontSize: 22 }}>📸</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>Fotoğraf{timerLabel}</span>
+        <span style={{ fontSize: 11, color: '#4ade80', fontWeight: 500 }}>{label}</span>
       </div>
     </div>
   );
 
+  if (isExpired && hasTimer) return <OpenedCard label="🔒 Süresi doldu" />;
+
+  // Sender side: blurred thumbnail while unsent/unviewed; same card as receiver once opened
+  if (isMe) {
+    if (isOpened && hasTimer) return <OpenedCard label="✓ Görüntülendi" />;
+    return (
+      <div style={base}>
+        <AuthImg src={msg.imageUrl!} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(14px)', transform: 'scale(1.1)' }} draggable={false} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          <span style={{ fontSize: 24 }}>🔒</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>Gönderildi{timerLabel}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Receiver: timed photo already viewed — same card as sender
+  if (isOpened && hasTimer) return <OpenedCard label="✓ Açıldı" />;
+
+  // Receiver: clickable (infinite or not yet viewed)
   return (
     <button onClick={() => onOpen(msg)} style={{ ...base, cursor: 'pointer', border: 'none', padding: 0 }}>
       <AuthImg src={msg.imageUrl!} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(16px)', transform: 'scale(1.1)' }} draggable={false} />
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
         <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>👁</div>
         <span style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>
-          {msg.viewTimer != null ? (isOnce ? '1× Görüntüle' : `${msg.viewTimer}s`) : 'Görüntüle'}
+          {hasTimer ? (isOnce ? '1× Görüntüle' : `${msg.viewTimer}s`) : 'Görüntüle'}
         </span>
       </div>
     </button>

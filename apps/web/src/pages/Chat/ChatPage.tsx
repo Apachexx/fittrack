@@ -36,16 +36,22 @@ class ChatErrorBoundary extends Component<
 }
 
 /* ── AuthImg ─────────────────────────────────────────────────────────────── */
-function AuthImg({ src, className, style, draggable, onContextMenu }
-  : React.ImgHTMLAttributes<HTMLImageElement>) {
+function AuthImg({ src, className, style, draggable, onContextMenu, onReady }
+  : React.ImgHTMLAttributes<HTMLImageElement> & { onReady?: () => void }) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const onReadyRef = useRef(onReady);
+  useEffect(() => { onReadyRef.current = onReady; });
   useEffect(() => {
     setBlobUrl(null); setFailed(false);
     if (!src) return;
     let url: string;
     api.get(src.replace(/^\/api\//, ''), { responseType: 'blob' })
-      .then(r => { url = URL.createObjectURL(r.data); setBlobUrl(url); })
+      .then(r => {
+        url = URL.createObjectURL(r.data);
+        setBlobUrl(url);
+        onReadyRef.current?.();   // notify viewer the image is ready
+      })
       .catch(() => setFailed(true));
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [src]);
@@ -55,7 +61,9 @@ function AuthImg({ src, className, style, draggable, onContextMenu }
       <span style={{ fontSize: 10, opacity: 0.35 }}>Yüklenemedi</span>
     </div>
   );
-  if (!blobUrl) return <div className={className} style={{ ...style, background: 'rgba(255,255,255,0.06)' }} />;
+  if (!blobUrl) return <div className={className} style={{ ...style, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid rgba(249,115,22,0.3)', borderTopColor: '#f97316', animation: 'spin 0.8s linear infinite' }} />
+  </div>;
   return <img src={blobUrl} className={className} style={style} draggable={draggable} onContextMenu={onContextMenu} />;
 }
 
@@ -169,16 +177,17 @@ const ImageViewer = memo(({ url, senderName, timer, onClose }: {
 }) => {
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; });
-  const [remaining, setRemaining] = useState<number | null>(
-    timer != null ? (timer === 0 ? 10 : timer) : null
-  );
-  // Use ref for onClose so changing parent renders don't restart the timer
+  const initialRemaining = timer != null ? (timer === 0 ? 10 : timer) : null;
+  const [remaining, setRemaining] = useState<number | null>(initialRemaining);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  // Start countdown ONLY after image is fully fetched & displayed
   useEffect(() => {
-    if (remaining === null) return;
+    if (!imgLoaded || remaining === null) return;
     if (remaining <= 0) { onCloseRef.current(); return; }
     const t = setTimeout(() => setRemaining(r => (r ?? 1) - 1), 1000);
     return () => clearTimeout(t);
-  }, [remaining]); // intentionally omit onClose — use ref instead
+  }, [remaining, imgLoaded]); // intentionally omit onClose — use ref instead
   useEffect(() => {
     const p = (e: Event) => e.preventDefault();
     const k = (e: KeyboardEvent) => { if (e.key === 'PrintScreen' || (e.ctrlKey && 'sp'.includes(e.key))) e.preventDefault(); };
@@ -197,14 +206,27 @@ const ImageViewer = memo(({ url, senderName, timer, onClose }: {
         ))}
       </div>
       <button onClick={onClose} className="btn btn-ghost btn-circle absolute top-4 right-4 z-10 text-white text-xl">✕</button>
-      {remaining !== null && (
-        <div className={`badge ${remaining <= 3 ? 'badge-error' : 'badge-warning'} gap-1 absolute top-4 left-1/2 -translate-x-1/2 z-10 py-3 px-4 text-sm`}>
+
+      {/* Timer badge — shows only after image is loaded */}
+      {remaining !== null && imgLoaded && (
+        <div className={`badge ${remaining <= 3 ? 'badge-error' : 'badge-warning'} gap-1 absolute top-4 left-1/2 -translate-x-1/2 z-10 py-3 px-4 text-sm font-bold`}>
           ⏱ {remaining}s
         </div>
       )}
-      <div className="relative max-w-[92vw] max-h-[82vh] select-none" onClick={e => e.stopPropagation()}>
+
+      {/* Loading indicator while fetching */}
+      {!imgLoaded && (
+        <div className="flex flex-col items-center gap-3 z-10">
+          <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(249,115,22,0.3)', borderTopColor: '#f97316', animation: 'spin 0.8s linear infinite' }} />
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Yükleniyor...</span>
+        </div>
+      )}
+
+      <div className="relative max-w-[92vw] max-h-[82vh] select-none" onClick={e => e.stopPropagation()}
+        style={{ display: imgLoaded ? 'block' : 'none' }}>
         <AuthImg src={url} className="max-w-full max-h-[82vh] rounded-2xl object-contain select-none"
-          draggable={false} onContextMenu={e => e.preventDefault()} />
+          draggable={false} onContextMenu={e => e.preventDefault()}
+          onReady={() => setImgLoaded(true)} />
         <div className="absolute inset-0 rounded-2xl" onContextMenu={e => e.preventDefault()} />
       </div>
     </div>

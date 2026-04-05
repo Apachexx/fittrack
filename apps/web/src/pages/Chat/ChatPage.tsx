@@ -259,10 +259,12 @@ function ImageMessage({ msg, isMe, onOpen }: { msg: DM; isMe: boolean; onOpen: (
     </div>
   );
 
-  // Receiver viewed it — show WhatsApp-style "Açıldı" pill, no re-viewing
-  if (isOpened) return (
+  // Receiver viewed a timed photo — show "Açıldı" pill, no re-viewing
+  // Infinite (no timer) photos are always re-viewable
+  const hasTimer = msg.viewTimer != null;
+  if (isOpened && hasTimer) return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-      <span style={{ fontSize: 15 }}>🖼️</span>
+      <span style={{ fontSize: 15 }}>📸</span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>Fotoğraf</span>
         <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 500 }}>✓ Açıldı</span>
@@ -535,7 +537,9 @@ function ChatPageInner() {
   }, [socket, connected, showToast]);
 
   const openImage = useCallback((msg: DM) => {
-    if (!msg.viewedAt && msg.senderId !== user?.id) socket?.emit('dm:open-image', { messageId: msg.id });
+    // Only mark as opened for timed photos (viewTimer != null) — infinite photos stay re-viewable
+    if (!msg.viewedAt && msg.senderId !== user?.id && msg.viewTimer != null)
+      socket?.emit('dm:open-image', { messageId: msg.id });
     setViewerMsg(msg);
   }, [socket, user?.id]);
 

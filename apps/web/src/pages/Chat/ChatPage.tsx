@@ -214,20 +214,21 @@ const ImageViewer = memo(({ url, senderName, timer, onClose }: {
         </div>
       )}
 
-      {/* Loading indicator while fetching */}
-      {!imgLoaded && (
-        <div className="flex flex-col items-center gap-3 z-10">
-          <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(249,115,22,0.3)', borderTopColor: '#f97316', animation: 'spin 0.8s linear infinite' }} />
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Yükleniyor...</span>
-        </div>
-      )}
-
-      <div className="relative max-w-[92vw] max-h-[82vh] select-none" onClick={e => e.stopPropagation()}
-        style={{ display: imgLoaded ? 'block' : 'none' }}>
+      {/* Image container — always rendered so mobile browser fetches it */}
+      <div className="relative max-w-[92vw] max-h-[82vh] select-none" onClick={e => e.stopPropagation()}>
         <AuthImg src={url} className="max-w-full max-h-[82vh] rounded-2xl object-contain select-none"
           draggable={false} onContextMenu={e => e.preventDefault()}
           onReady={() => setImgLoaded(true)} />
         <div className="absolute inset-0 rounded-2xl" onContextMenu={e => e.preventDefault()} />
+
+        {/* Loading overlay on top of image while fetching */}
+        {!imgLoaded && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(249,115,22,0.3)', borderTopColor: '#f97316', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Yükleniyor...</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -89,14 +89,26 @@ app.use(error_1.errorHandler);
 // Production: web static dosyalarını servis et
 const webDistPath = path_1.default.join(__dirname, '../../web/dist');
 if (fs_1.default.existsSync(webDistPath)) {
-    // sw.js must NEVER be cached — browser must always fetch the latest SW
-    app.use('/sw.js', (_req, res, next) => {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    const noCache = (_req, res, next) => {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         next();
-    });
-    app.use(express_1.default.static(webDistPath));
-    app.get('*', (_req, res) => {
+    };
+    // sw.js and index.html must NEVER be cached
+    app.use('/sw.js', noCache);
+    app.use(express_1.default.static(webDistPath, {
+        setHeaders(res, filePath) {
+            // Hashed assets can be cached forever; HTML must be fresh
+            if (filePath.endsWith('.html')) {
+                res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+            }
+            else {
+                res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            }
+        },
+    }));
+    app.get('*', noCache, (_req, res) => {
         res.sendFile(path_1.default.join(webDistPath, 'index.html'));
     });
 }

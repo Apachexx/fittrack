@@ -490,7 +490,8 @@ function ChatPageInner() {
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) setPendingImage({ file: f, preview: URL.createObjectURL(f) }); e.target.value = ''; }} />
           <button onClick={() => fileInputRef.current?.click()} disabled={!connected}
-            className="btn btn-ghost btn-sm btn-circle shrink-0" style={{ color: '#6b7280' }}>
+            className="shrink-0 flex items-center justify-center rounded-full transition-all active:scale-95"
+            style={{ width: 38, height: 38, background: 'rgba(249,115,22,0.15)', color: '#f97316', border: '1px solid rgba(249,115,22,0.3)', opacity: connected ? 1 : 0.5 }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
               <circle cx="12" cy="13" r="4" />
@@ -509,7 +510,15 @@ function ChatPageInner() {
           maxLength={500} disabled={!connected} />
       </div>
       <button onClick={sendMessage} disabled={!input.trim() || !connected}
-        className={`btn btn-circle btn-sm shrink-0 ${input.trim() ? 'btn-primary' : 'btn-ghost opacity-40'}`}>
+        className="shrink-0 flex items-center justify-center rounded-full transition-all active:scale-95"
+        style={{
+          width: 38, height: 38,
+          background: input.trim() && connected ? '#f97316' : 'rgba(249,115,22,0.15)',
+          color: input.trim() && connected ? '#fff' : '#f97316',
+          border: '1px solid rgba(249,115,22,0.4)',
+          boxShadow: input.trim() && connected ? '0 4px 16px rgba(249,115,22,0.4)' : 'none',
+          opacity: !connected ? 0.5 : 1,
+        }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-4 h-4">
           <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
         </svg>

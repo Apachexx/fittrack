@@ -4,4 +4,5 @@ node_modules
 .turbo
 *.log
 apps/web/dist
+apps/api/dist
 packages/*/dist

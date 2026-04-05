@@ -1019,7 +1019,7 @@ function ChatPageInner() {
         <div className="flex gap-1 flex-1">
           {[
             { key: 'public', label: '💬 Genel' },
-            { key: 'dm', label: `👤 DM${totalUnread > 0 ? ` (${totalUnread})` : ''}` },
+            { key: 'dm', label: `📨 DM${totalUnread > 0 ? ` (${totalUnread})` : ''}` },
             ...(isAdmin || isMod ? [{ key: 'admin', label: '🛡' }] : []),
           ].map(t => (
             <button key={t.key}

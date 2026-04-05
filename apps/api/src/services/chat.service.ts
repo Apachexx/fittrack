@@ -480,6 +480,7 @@ export async function openDMImage(messageId: string, viewerId: string): Promise<
            ELSE expires_at
          END
      WHERE id = $1 AND receiver_id = $2 AND msg_type = 'image'
+       AND view_timer IS NOT NULL
      RETURNING id, sender_id, receiver_id,
        (SELECT name FROM users WHERE id = sender_id) AS name,
        content, is_read, created_at,

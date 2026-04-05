@@ -22,14 +22,17 @@ async function checkServerVersion() {
     const stored = localStorage.getItem('__srv_v');
 
     if (stored && stored !== v) {
-      // New deploy detected — nuke SW caches, then reload after a short delay
-      // so React Query has time to persist any in-flight data to localStorage
+      // New deploy detected — unregister SW + nuke all caches, then reload
+      // Unregistering forces the next load to hit the network directly (no SW interception)
       localStorage.setItem('__srv_v', v);
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       }
-      await new Promise(r => setTimeout(r, 4000));
       window.location.reload();
       return;
     }

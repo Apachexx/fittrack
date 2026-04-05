@@ -22,5 +22,24 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [require('daisyui')],
+  daisyui: {
+    themes: [
+      {
+        fittrack: {
+          'primary':         '#f97316',
+          'primary-content': '#ffffff',
+          'secondary':       '#3b82f6',
+          'accent':          '#e11d48',
+          'neutral':         '#1e2a3a',
+          'base-100':        '#080C14',
+          'base-200':        '#0d1117',
+          'base-300':        '#111f2e',
+          'base-content':    '#e2e8f0',
+        },
+      },
+    ],
+    darkTheme: 'fittrack',
+    logs: false,
+  },
 };

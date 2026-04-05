@@ -654,10 +654,13 @@ function ChatPageInner() {
 
   const dmMsgList = dmMsgs.map(msg => {
     const isMe = msg.senderId === user?.id;
+    const canAct = !isMe && (isAdmin || isMod) && msg.senderId;
     return (
       <Bubble key={msg.id} isMe={isMe} name={!isMe ? msg.senderName : undefined}
         content={msg.msgType === 'image' ? <ImageMessage msg={msg} isMe={isMe} onOpen={openImage} /> : msg.content}
-        time={timeStr(msg.createdAt)} isRead={msg.isRead} />
+        time={timeStr(msg.createdAt)} isRead={msg.isRead}
+        onNameClick={canAct ? () => setClickedUser({ id: msg.senderId!, name: msg.senderName }) : undefined}
+      />
     );
   });
 
